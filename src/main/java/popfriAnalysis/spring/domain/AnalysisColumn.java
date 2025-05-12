@@ -24,7 +24,4 @@ public class AnalysisColumn {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "process_id")
     private AnalysisProcess process;
-
-    @OneToMany(mappedBy = "column", cascade = CascadeType.ALL)
-    private List<AnalysisCondition> conditionList;
 }
