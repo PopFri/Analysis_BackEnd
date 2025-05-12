@@ -1,0 +1,18 @@
+server:
+  port: 8082
+spring:
+  datasource:
+    url: ${MYSQL_DB_URL}
+    username: ${MYSQL_DB_USERNAME}
+    password: ${MYSQL_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 1000
+    database-platform: org.hibernate.dialect.MySQL8Dialect
