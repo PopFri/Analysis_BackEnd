@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.domain.AnalysisColumn;
 import popfriAnalysis.spring.domain.AnalysisProcess;
 import popfriAnalysis.spring.repository.ColumnRepository;
+import popfriAnalysis.spring.web.dto.ColumnResponse;
 
 import java.util.List;
 
@@ -32,5 +33,14 @@ public class ColumnService {
         List<AnalysisColumn> oldColumnList = columnRepository.findByProcess(process);
 
         columnRepository.deleteAll(oldColumnList);
+    }
+
+    public List<ColumnResponse.getColumnListResDTO> getColumnList(AnalysisProcess process){
+        return columnRepository.findByProcess(process).stream()
+                .map(analysisColumn -> ColumnResponse.getColumnListResDTO.builder()
+                        .columnId(analysisColumn.getColumnId())
+                        .columnName(analysisColumn.getName())
+                        .build())
+                .toList();
     }
 }
