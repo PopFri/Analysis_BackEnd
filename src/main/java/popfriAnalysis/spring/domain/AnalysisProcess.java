@@ -28,4 +28,7 @@ public class AnalysisProcess extends BaseEntity {
 
     @OneToMany(mappedBy = "process", cascade = CascadeType.ALL)
     private List<AnalysisColumn> columnList;
+
+    @OneToMany(mappedBy = "process", cascade = CascadeType.ALL)
+    private List<AnalysisCondition> conditionList;
 }

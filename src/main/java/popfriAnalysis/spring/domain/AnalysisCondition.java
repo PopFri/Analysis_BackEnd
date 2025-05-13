@@ -22,8 +22,8 @@ public class AnalysisCondition {
     private String operator;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "column_id")
-    private AnalysisColumn column;
+    @JoinColumn(name = "process_id")
+    private AnalysisProcess process;
 
     @OneToMany(mappedBy = "condition", cascade = CascadeType.ALL)
     private List<AnalysisResult> resultList;
