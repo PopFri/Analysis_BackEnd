@@ -7,6 +7,7 @@ import popfriAnalysis.spring.domain.AnalysisCondition;
 import popfriAnalysis.spring.domain.AnalysisProcess;
 import popfriAnalysis.spring.repository.ConditionRepository;
 import popfriAnalysis.spring.web.dto.ConditionRequest;
+import popfriAnalysis.spring.web.dto.ConditionResponse;
 
 import java.util.List;
 
@@ -32,5 +33,14 @@ public class ConditionService {
         List<AnalysisCondition> oldConditionList = conditionRepository.findByProcess(process);
 
         conditionRepository.deleteAll(oldConditionList);
+    }
+
+    public List<ConditionResponse.getConditionListResDTO> getConditionListToProcess(AnalysisProcess process){
+        return conditionRepository.findByProcess(process).stream()
+                .map(condition -> ConditionResponse.getConditionListResDTO.builder()
+                        .conditionId(condition.getConditionId())
+                        .operator(condition.getOperator())
+                        .build())
+                .toList();
     }
 }
