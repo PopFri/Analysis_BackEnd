@@ -14,7 +14,7 @@ public class ConditionConverter {
             String orGroup = dto.getCondition().stream()
                     .map(ConditionConverter::conditionDtoToSQL)
                     .filter(clause -> !clause.isBlank())
-                    .collect(Collectors.joining(" OR ", " AND (", ")"));
+                    .collect(Collectors.joining(" || ", " && (", ")"));
             builder.append(orGroup);
         }
 
