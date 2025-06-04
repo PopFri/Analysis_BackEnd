@@ -13,8 +13,11 @@ import popfriAnalysis.spring.repository.CalculatorRepository;
 import popfriAnalysis.spring.repository.ColumnRepository;
 import popfriAnalysis.spring.repository.ConditionRepository;
 import popfriAnalysis.spring.web.dto.ConditionRequest;
+import popfriAnalysis.spring.web.dto.ConditionResponse;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -103,4 +106,21 @@ public class ConditionService {
         );
     }
 
+    public List<ConditionResponse.getConditionListResDTO> getCondition(AnalysisProcess process){
+        return calculatorRepository.findByProcess(process).stream()
+                .sorted(Comparator.comparing(Calculator::getCalIndex))
+                .map(calculator -> {
+                    AnalysisCondition condition = calculator.getCondition();
+                    if(condition == null)
+                        return null;
+
+                    return ConditionResponse.getConditionListResDTO.builder()
+                            .conditionId(condition.getConditionId())
+                            .condition(
+                                    condition.getColumn().getName() + " " + condition.getOperator() + " " + condition.getValueC())
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .toList();
+    }
 }
