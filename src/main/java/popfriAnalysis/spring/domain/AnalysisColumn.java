@@ -24,4 +24,13 @@ public class AnalysisColumn {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "process_id")
     private AnalysisProcess process;
+
+    @OneToMany(mappedBy = "column", cascade = CascadeType.ALL)
+    private List<AnalysisCondition> conditionList;
+
+    @OneToMany(mappedBy = "column", cascade = CascadeType.ALL)
+    private List<AnalysisSuccess> successList;
+
+    @OneToMany(mappedBy = "column", cascade = CascadeType.ALL)
+    private List<AnalysisFail> failList;
 }

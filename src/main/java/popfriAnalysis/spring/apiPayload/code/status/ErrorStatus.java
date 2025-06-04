@@ -16,10 +16,17 @@ public enum ErrorStatus implements BaseErrorCode {
     _UNAUTHORIZED(HttpStatus.UNAUTHORIZED,"COMMON401","인증이 필요합니다."),
     _FORBIDDEN(HttpStatus.FORBIDDEN, "COMMON403", "금지된 요청입니다."),
 
+    //Column Error
+    _NOT_EXIST_COLUMN(HttpStatus.BAD_REQUEST,"COLUMN4001","존재하지 않은 컬럼입니다."),
+
     //Process Error
     _NOT_EXIST_PROCESS(HttpStatus.BAD_REQUEST,"PROCESS4001","존재하지 않은 프로세스입니다."),
 
-    TEMP_EXCEPTION(HttpStatus.BAD_REQUEST, "TEMP4001", "이거는 테스트");
+    //Condition Error
+    _NOT_EXIST_RELATION(HttpStatus.BAD_REQUEST,"CONDITION4001","존재하지 않은 관계연산자입니다."),
+    _CALCULATE_FAIL(HttpStatus.BAD_REQUEST,"CONDITION5001","조건문 연산을 실패하였습니다."),
+
+    ;
 
     private final HttpStatus httpStatus;
     private final String code;

@@ -3,8 +3,6 @@ package popfriAnalysis.spring.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
-
 @Entity
 @Getter
 @Setter
@@ -21,10 +19,10 @@ public class AnalysisCondition {
     @Column(name = "operator", length = 1000)
     private String operator;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "process_id")
-    private AnalysisProcess process;
+    @Column(name = "value_c", length = 10000)
+    private String valueC;
 
-    @OneToMany(mappedBy = "condition", cascade = CascadeType.ALL)
-    private List<AnalysisResult> resultList;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "column_id")
+    private AnalysisColumn column;
 }
