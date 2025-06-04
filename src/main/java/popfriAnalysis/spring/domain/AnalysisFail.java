@@ -14,17 +14,20 @@ import popfriAnalysis.spring.domain.common.BaseEntity;
 @DynamicInsert
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name = "analysis_result")
-public class AnalysisResult extends BaseEntity {
+@Table(name = "analysis_fail")
+public class AnalysisFail extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "result_id")
     private Long resultId;
 
-    @Column(name = "value")
-    private Long value;
+    @Column(name = "value_r", length = 1000)
+    private String  valueR;
+
+    @Column(name = "log_id", length = 1000)
+    private String logId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "condition_id")
-    private AnalysisCondition condition;
+    @JoinColumn(name = "column_id")
+    private AnalysisColumn column;
 }

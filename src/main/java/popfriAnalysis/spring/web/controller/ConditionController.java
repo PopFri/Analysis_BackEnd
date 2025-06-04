@@ -8,7 +8,6 @@ import popfriAnalysis.spring.apiPayload.ApiResponse;
 import popfriAnalysis.spring.domain.AnalysisProcess;
 import popfriAnalysis.spring.service.ConditionService;
 import popfriAnalysis.spring.service.ProcessService;
-import popfriAnalysis.spring.web.dto.ColumnRequest;
 import popfriAnalysis.spring.web.dto.ConditionRequest;
 import popfriAnalysis.spring.web.dto.ConditionResponse;
 
@@ -24,18 +23,18 @@ public class ConditionController {
 
     @PostMapping("")
     @Operation(summary = "분석 조건 추가", description = "프로세스 아이디와 추가할 조건을 입력받아 저장")
-    public ApiResponse<Boolean> addAnalysisColumn(@RequestBody ConditionRequest.AddAnalysisColumnDto request){
+    public ApiResponse<Boolean> addAnalysisCondition(@RequestBody ConditionRequest.AddAnalysisConditionDto request){
         AnalysisProcess analysisProcess = processService.getProcess(request.getProcessId());
 
-        conditionService.delAnalysisConditionAll(analysisProcess);
-        return ApiResponse.onSuccess(conditionService.addAnalysisCondition(analysisProcess, request.getCondition()));
+        conditionService.delCondition(analysisProcess);
+        return ApiResponse.onSuccess(conditionService.saveConditions(analysisProcess, request));
     }
 
     @GetMapping("")
-    @Operation(summary = "분석 조건 조회", description = "프로세스 아이디를 입력받아 분석 조건 반환")
-    public ApiResponse<List<ConditionResponse.getConditionListResDTO>> getAnalysisColumn(@RequestParam Long processId){
+    @Operation(summary = "분석 조건 조회", description = "프로세스 아이디를 입력받아 해당 프로세스가 갖고 있는 조건 반환")
+    public ApiResponse<List<ConditionResponse.getConditionListResDTO>> getAnalysisCondition(@RequestParam Long processId){
         AnalysisProcess analysisProcess = processService.getProcess(processId);
 
-        return ApiResponse.onSuccess(conditionService.getConditionListToProcess(analysisProcess));
+        return ApiResponse.onSuccess(conditionService.getCondition(analysisProcess));
     }
 }

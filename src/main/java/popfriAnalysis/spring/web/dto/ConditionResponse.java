@@ -14,6 +14,6 @@ public class ConditionResponse {
     @Schema(title = "CONDITION_RES_01 : 조건 조회 응답")
     public static class getConditionListResDTO{
         Long conditionId;
-        String operator;
+        String condition;
     }
 }

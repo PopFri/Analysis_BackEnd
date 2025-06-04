@@ -5,9 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import popfriAnalysis.spring.apiPayload.ApiResponse;
-import popfriAnalysis.spring.domain.AnalysisProcess;
 import popfriAnalysis.spring.service.ProcessService;
-import popfriAnalysis.spring.web.dto.ConditionResponse;
 import popfriAnalysis.spring.web.dto.ProcessRequest;
 import popfriAnalysis.spring.web.dto.ProcessResponse;
 

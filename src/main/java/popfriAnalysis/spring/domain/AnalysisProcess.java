@@ -30,5 +30,5 @@ public class AnalysisProcess extends BaseEntity {
     private List<AnalysisColumn> columnList;
 
     @OneToMany(mappedBy = "process", cascade = CascadeType.ALL)
-    private List<AnalysisCondition> conditionList;
+    private List<Calculator> calculatorList;
 }
