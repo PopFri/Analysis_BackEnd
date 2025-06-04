@@ -3,16 +3,15 @@ package popfriAnalysis.spring.web.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import popfriAnalysis.spring.apiPayload.ApiResponse;
 import popfriAnalysis.spring.domain.AnalysisProcess;
 import popfriAnalysis.spring.service.ConditionService;
 import popfriAnalysis.spring.service.ProcessService;
-import popfriAnalysis.spring.web.dto.ColumnRequest;
 import popfriAnalysis.spring.web.dto.ConditionRequest;
-import popfriAnalysis.spring.web.dto.ConditionResponse;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/condition")
@@ -24,18 +23,11 @@ public class ConditionController {
 
     @PostMapping("")
     @Operation(summary = "분석 조건 추가", description = "프로세스 아이디와 추가할 조건을 입력받아 저장")
-    public ApiResponse<Boolean> addAnalysisColumn(@RequestBody ConditionRequest.AddAnalysisColumnDto request){
+    public ApiResponse<Boolean> addAnalysisCondition(@RequestBody ConditionRequest.AddAnalysisConditionDto request){
         AnalysisProcess analysisProcess = processService.getProcess(request.getProcessId());
 
-        conditionService.delAnalysisConditionAll(analysisProcess);
-        return ApiResponse.onSuccess(conditionService.addAnalysisCondition(analysisProcess, request.getCondition()));
+        conditionService.delCondition(analysisProcess);
+        return ApiResponse.onSuccess(conditionService.saveConditions(analysisProcess, request));
     }
 
-    @GetMapping("")
-    @Operation(summary = "분석 조건 조회", description = "프로세스 아이디를 입력받아 분석 조건 반환")
-    public ApiResponse<List<ConditionResponse.getConditionListResDTO>> getAnalysisColumn(@RequestParam Long processId){
-        AnalysisProcess analysisProcess = processService.getProcess(processId);
-
-        return ApiResponse.onSuccess(conditionService.getConditionListToProcess(analysisProcess));
-    }
 }

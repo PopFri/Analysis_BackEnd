@@ -8,13 +8,14 @@ import java.util.List;
 public class ConditionRequest {
     @Getter
     public static class ConditionDto{
-        String id;
+        String column;
+        String op;
         String value;
         List<ConditionDto> condition;
     }
     @Getter
     @Schema(title = "COLUMN_REQ_01 : 분석 컬럼 저장 요청 DTO")
-    public static class AddAnalysisColumnDto{
+    public static class AddAnalysisConditionDto{
         Long processId;
         List<ConditionDto> condition;
     }
