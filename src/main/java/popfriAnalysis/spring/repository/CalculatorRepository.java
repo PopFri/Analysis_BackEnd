@@ -8,6 +8,5 @@ import popfriAnalysis.spring.domain.Calculator;
 import java.util.List;
 
 public interface CalculatorRepository extends JpaRepository<Calculator, Long> {
-    Calculator findByCondition(AnalysisCondition condition);
     List<Calculator> findByProcess(AnalysisProcess process);
 }
