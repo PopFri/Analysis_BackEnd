@@ -9,4 +9,5 @@ import java.util.List;
 
 public interface CalculatorRepository extends JpaRepository<Calculator, Long> {
     List<Calculator> findByProcess(AnalysisProcess process);
+    List<Calculator> findByProcessOrderByCalIndex(AnalysisProcess process);
 }
