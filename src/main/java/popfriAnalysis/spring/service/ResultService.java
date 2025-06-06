@@ -8,6 +8,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
+import popfriAnalysis.spring.apiPayload.exception.handler.ResultHandler;
 import popfriAnalysis.spring.domain.*;
 import popfriAnalysis.spring.repository.CalculatorRepository;
 import popfriAnalysis.spring.repository.FailRepository;
@@ -30,10 +32,8 @@ public class ResultService {
     public void saveResult(String message) throws ParseException {
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObject = (JSONObject) jsonParser.parse(message);
-        log.info("Success String -> JSON");
 
         String logId = jsonObject.get("QUERY_pv_id").toString();
-        log.info("Success to get QUERY_pv_id: " + logId);
 
         processRepository.findAll().stream().parallel().forEach(process -> {
             if(evaluateProcessLogic(jsonObject, process)){
@@ -43,7 +43,7 @@ public class ResultService {
                                 .valueR(jsonObject.get(column.getName()).toString())
                                 .logId(logId).build())
                 );
-                log.info("Save Result Success(success_result) logId: " + logId);
+                log.info("Save Result Successful(success_result) logId: " + logId);
             } else {
                 process.getColumnList().forEach(column ->
                         failRepository.save(AnalysisFail.builder()
@@ -51,7 +51,7 @@ public class ResultService {
                                 .valueR(jsonObject.get(column.getName()).toString())
                                 .logId(logId).build())
                 );
-                log.info("Save Result Success(fail_result) logId: " + logId);
+                log.info("Save Result Successful(fail_result) logId: " + logId);
             }
         });
     }
@@ -65,7 +65,6 @@ public class ResultService {
             if (entry.getCondition() != null) {
                 // 피연산자: 조건 평가
                 boolean result = calculateColumn(jsonObject, entry.getCondition());
-                log.info("Start to calculate Column (column name: " + entry.getCondition().getColumn().getName() + ")");
                 stack.push(result);
             } else if (entry.getRelation() != null) {
                 switch (entry.getRelation()) {
@@ -79,13 +78,13 @@ public class ResultService {
                         boolean left = stack.pop();
                         stack.push(left || right);
                     }
-                    default -> throw new IllegalArgumentException("Unknown relation: " + entry.getRelation());
+                    default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_RELATION);
                 }
             }
         }
 
         if (stack.size() != 1) {
-            throw new IllegalStateException("Invalid postfix expression for process " + process.getProcessId());
+            throw new ResultHandler(ErrorStatus._CALCULATE_FAIL);
         }
 
         return stack.pop();
@@ -95,7 +94,6 @@ public class ResultService {
         String operator = condition.getOperator();
         String value = condition.getValueC();
 
-        log.info("Start to find column by JSON (column name: " + condition.getColumn().getName() + ")");
         Object jsonValue = jsonObject.get(condition.getColumn().getName());
         if(jsonValue == null){
             log.error("Can not find column: " + condition.getColumn().getName());
@@ -111,7 +109,7 @@ public class ResultService {
             case "<" -> Double.parseDouble(actualValue) < Double.parseDouble(value);
             case ">=" -> Double.parseDouble(actualValue) >= Double.parseDouble(value);
             case "<=" -> Double.parseDouble(actualValue) <= Double.parseDouble(value);
-            default -> throw new IllegalArgumentException("Unknown operator: " + operator);
+            default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_OPERATION);
         };
     }
 }

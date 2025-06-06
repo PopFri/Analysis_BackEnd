@@ -24,8 +24,8 @@ public enum ErrorStatus implements BaseErrorCode {
 
     //Condition Error
     _NOT_EXIST_RELATION(HttpStatus.BAD_REQUEST,"CONDITION4001","존재하지 않은 관계연산자입니다."),
-    _CALCULATE_FAIL(HttpStatus.BAD_REQUEST,"CONDITION5001","조건문 연산을 실패하였습니다."),
-
+    _NOT_EXIST_OPERATION(HttpStatus.BAD_REQUEST,"CONDITION4002","존재하지 않은 조건연산자입니다."),
+    _CALCULATE_FAIL(HttpStatus.INTERNAL_SERVER_ERROR,"CONDITION5001","조건문 연산을 실패하였습니다."),
     ;
 
     private final HttpStatus httpStatus;
