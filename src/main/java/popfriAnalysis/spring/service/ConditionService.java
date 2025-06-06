@@ -36,12 +36,41 @@ public class ConditionService {
         columnList.forEach(column -> conditionRepository.deleteAll(conditionRepository.findByColumn(column)));
     }
 
-    public Boolean saveConditions(AnalysisProcess process ,ConditionRequest.AddAnalysisConditionDto dto) {
-        for (int i = 0; i < dto.getCondition().size(); i++) {
-            savePostfixRecursive(process, dto.getCondition().get(i));
+    public Boolean saveConditions(AnalysisProcess process, ConditionRequest.AddAnalysisConditionDto dto) {
+        List<ConditionRequest.ConditionDto> conditionList = dto.getCondition();
 
-            // 같은 깊이 일시 OR(루트 개별 처리)
-            if (i < dto.getCondition().size() - 1) {
+        for (ConditionRequest.ConditionDto conditionDto : conditionList) {
+            savePostfix(process, conditionDto);
+        }
+
+        // 루트 조건들끼리 OR (Postfix: 피연산자 뒤에)
+        for (int i = 0; i < conditionList.size() - 1; i++) {
+            calculatorRepository.save(
+                    Calculator.builder()
+                            .process(process)
+                            .condition(null)
+                            .relation("OR")
+                            .calIndex(postfixIndex++)
+                            .build()
+            );
+        }
+
+        return true;
+    }
+
+    private void savePostfix(AnalysisProcess process, ConditionRequest.ConditionDto dto) {
+        boolean hasChildren = dto.getCondition() != null && !dto.getCondition().isEmpty();
+
+        if (hasChildren) {
+            List<ConditionRequest.ConditionDto> childList = dto.getCondition();
+
+            // 1. 자식 조건들 먼저 후위 저장
+            for (ConditionRequest.ConditionDto child : childList) {
+                savePostfix(process, child);
+            }
+
+            // 2. 자식 간 OR 연산 (Postfix이므로 마지막에 몰아서)
+            for (int i = 0; i < childList.size() - 1; i++) {
                 calculatorRepository.save(
                         Calculator.builder()
                                 .process(process)
@@ -53,38 +82,29 @@ public class ConditionService {
             }
         }
 
-        return true;
-    }
-
-    private void savePostfixRecursive(AnalysisProcess process, ConditionRequest.ConditionDto conditionDto) {
-        AnalysisColumn column = columnRepository.findByProcessAndName(process, conditionDto.getColumn())
+        // 3. 현재 피연산자 저장
+        AnalysisColumn column = columnRepository.findByProcessAndName(process, dto.getColumn())
                 .orElseThrow(() -> new ConditionHandler(ErrorStatus._NOT_EXIST_COLUMN));
 
         AnalysisCondition condition = conditionRepository.save(
                 AnalysisCondition.builder()
                         .column(column)
-                        .operator(conditionDto.getOp())
-                        .valueC(conditionDto.getValue())
-                        .build());
+                        .operator(dto.getOp())
+                        .valueC(dto.getValue())
+                        .build()
+        );
 
-        // 하위 조건이 존재할 시 실행
-        if (conditionDto.getCondition() != null && !conditionDto.getCondition().isEmpty()) {
-            for (int i = 0; i < conditionDto.getCondition().size(); i++) {
-                savePostfixRecursive(process, conditionDto.getCondition().get(i));
+        calculatorRepository.save(
+                Calculator.builder()
+                        .process(process)
+                        .condition(condition)
+                        .relation(null)
+                        .calIndex(postfixIndex++)
+                        .build()
+        );
 
-                // 같은 깊이일 시 OR
-                if (i < conditionDto.getCondition().size() - 1) {
-                    calculatorRepository.save(
-                            Calculator.builder()
-                                    .process(process)
-                                    .condition(null)
-                                    .relation("OR")
-                                    .calIndex(postfixIndex++)
-                                    .build()
-                    );
-                }
-            }
-            // 이전 연산과 AND
+        // 4. 자식이 있었으면 자식들과 부모 사이 AND
+        if (hasChildren) {
             calculatorRepository.save(
                     Calculator.builder()
                             .process(process)
@@ -94,16 +114,6 @@ public class ConditionService {
                             .build()
             );
         }
-
-        // 현재 피연산자 저장
-        calculatorRepository.save(
-                Calculator.builder()
-                        .process(process)
-                        .condition(condition)
-                        .relation(null)
-                        .calIndex(postfixIndex++)
-                        .build()
-        );
     }
 
     public List<ConditionResponse.getConditionListResDTO> getCondition(AnalysisProcess process){
@@ -122,5 +132,10 @@ public class ConditionService {
                 })
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    public List<Calculator> changePostfix(List<Calculator> calculatorList){
+
+        return null;
     }
 }

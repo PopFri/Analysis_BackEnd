@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.domain.AnalysisColumn;
 import popfriAnalysis.spring.domain.AnalysisProcess;
+import popfriAnalysis.spring.repository.CalculatorRepository;
 import popfriAnalysis.spring.repository.ColumnRepository;
 import popfriAnalysis.spring.web.dto.ColumnResponse;
 
@@ -14,6 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ColumnService {
     private final ColumnRepository columnRepository;
+    private final CalculatorRepository calculatorRepository;
 
     public Boolean addAnalysisColumn(AnalysisProcess process, List<String> input){
         List<AnalysisColumn> columnList = input.stream()
@@ -30,6 +32,8 @@ public class ColumnService {
 
     @Transactional
     public void delAnalysisColumnAll(AnalysisProcess process){
+        calculatorRepository.deleteAll(calculatorRepository.findByProcess(process));
+
         List<AnalysisColumn> oldColumnList = columnRepository.findByProcess(process);
 
         columnRepository.deleteAll(oldColumnList);
