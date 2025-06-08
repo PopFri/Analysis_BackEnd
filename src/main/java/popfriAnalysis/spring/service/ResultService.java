@@ -15,8 +15,10 @@ import popfriAnalysis.spring.repository.CalculatorRepository;
 import popfriAnalysis.spring.repository.FailRepository;
 import popfriAnalysis.spring.repository.ProcessRepository;
 import popfriAnalysis.spring.repository.SuccessRepository;
+import popfriAnalysis.spring.web.dto.ResultResponse;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -111,5 +113,27 @@ public class ResultService {
             case "<=" -> Double.parseDouble(actualValue) <= Double.parseDouble(value);
             default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_OPERATION);
         };
+    }
+
+    public List<ResultResponse.getResultColumn> getResultList(AnalysisProcess process){
+        Map<String, List<AnalysisSuccess>> successMap = process.getColumnList().stream()
+                .flatMap(column -> column.getSuccessList().stream())
+                .collect(Collectors.groupingBy(AnalysisSuccess::getLogId));
+
+        List<ResultResponse.getResultColumn> resultList = new ArrayList<>();
+        for(String logId : successMap.keySet()){
+            resultList.add(ResultResponse.getResultColumn.builder()
+                    .logId(logId)
+                    .columnList(successMap.get(logId)
+                            .stream()
+                            .map(result -> ResultResponse.getResultColumn.columnDto.builder()
+                                    .name(result.getColumn().getName())
+                                    .value(result.getValueR())
+                                    .build())
+                            .toList())
+                    .build());
+        }
+
+        return resultList;
     }
 }
