@@ -11,10 +11,7 @@ import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
 import popfriAnalysis.spring.apiPayload.exception.handler.ResultHandler;
 import popfriAnalysis.spring.domain.*;
-import popfriAnalysis.spring.repository.CalculatorRepository;
-import popfriAnalysis.spring.repository.FailRepository;
-import popfriAnalysis.spring.repository.ProcessRepository;
-import popfriAnalysis.spring.repository.SuccessRepository;
+import popfriAnalysis.spring.repository.*;
 
 import java.util.*;
 
@@ -26,6 +23,7 @@ public class ResultService {
     private final CalculatorRepository calculatorRepository;
     private final SuccessRepository successRepository;
     private final FailRepository failRepository;
+    private final LogDataRepository logDataRepository;
 
     @KafkaListener(topics = "matomo-log", groupId = "consumer_group01")
     @Transactional
@@ -35,13 +33,15 @@ public class ResultService {
 
         String logId = jsonObject.get("QUERY_pv_id").toString();
 
+        LogData logData = logDataRepository.save(LogData.builder().logId(logId).data(message).build());
+
         processRepository.findAll().stream().parallel().forEach(process -> {
             if(evaluateProcessLogic(jsonObject, process)){
                 process.getColumnList().forEach(column ->
                         successRepository.save(AnalysisSuccess.builder()
                                 .column(column)
                                 .valueR(jsonObject.get(column.getName()).toString())
-                                .logId(logId).build())
+                                .logData(logData).build())
                 );
                 log.info("Save Result Successful(success_result) logId: " + logId);
             } else {
@@ -49,7 +49,7 @@ public class ResultService {
                         failRepository.save(AnalysisFail.builder()
                                 .column(column)
                                 .valueR(jsonObject.get(column.getName()).toString())
-                                .logId(logId).build())
+                                .logData(logData).build())
                 );
                 log.info("Save Result Successful(fail_result) logId: " + logId);
             }
