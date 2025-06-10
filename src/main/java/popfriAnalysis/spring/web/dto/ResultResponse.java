@@ -32,8 +32,8 @@ public class ResultResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     @Schema(title = "RESULT_RES_02 : 필터링별 성공 데이터 갯수 응답")
-    public static class successDataCoundDto{
+    public static class successDataCountDto{
         String condition;
-        Long successCount;
+        Integer successCount;
     }
 }

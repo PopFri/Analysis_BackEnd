@@ -178,4 +178,19 @@ public class ResultService {
         return resultList;
     }
 
+    public List<ResultResponse.successDataCountDto> successDataCountByCondition(Long processId) {
+        List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
+        List<ResultResponse.successDataCountDto> successDataCountDtoList = new ArrayList<>();
+        for(Calculator calculator : calculatorList){
+            String columnName = calculator.getCondition().getColumn().getName();
+            String operator = calculator.getCondition().getOperator();
+            String value = calculator.getCondition().getValueC();
+            String strCondition = new String(columnName + " " + operator + " " + value);
+            successDataCountDtoList.add(ResultResponse.successDataCountDto.builder()
+                            .condition(strCondition)
+                            .successCount(calculator.getCondition().getSuccessCount())
+                    .build());
+        }
+        return successDataCountDtoList;
+    }
 }
