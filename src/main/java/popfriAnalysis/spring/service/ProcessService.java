@@ -22,12 +22,12 @@ public class ProcessService {
         return processRepository.findByProcessId(processId).orElseThrow(() -> new ProcessHandler(ErrorStatus._NOT_EXIST_PROCESS));
     }
 
-    public Boolean addAnalysisProcess(String name){
-        processRepository.save(AnalysisProcess.builder()
+    public Long addAnalysisProcess(String name){
+        AnalysisProcess process = processRepository.save(AnalysisProcess.builder()
                 .name(name)
                 .build());
 
-        return true;
+        return process.getProcessId();
     }
 
     public List<ProcessResponse.getProcessListResDTO> getProcessList(){
