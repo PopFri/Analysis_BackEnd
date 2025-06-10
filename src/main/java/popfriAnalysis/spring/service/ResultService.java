@@ -25,7 +25,7 @@ public class ResultService {
     private final FailRepository failRepository;
     private final LogDataRepository logDataRepository;
 
-    @KafkaListener(topics = "matomo-log", groupId = "consumer_group01")
+    @KafkaListener(topics = "matomo-log", groupId = "analysis_server_consumer_01")
     @Transactional
     public void saveResult(String message) throws ParseException {
         JSONParser jsonParser = new JSONParser();
@@ -35,7 +35,7 @@ public class ResultService {
 
         LogData logData = logDataRepository.save(LogData.builder().logId(logId).data(message).build());
 
-        processRepository.findAll().stream().parallel().forEach(process -> {
+        processRepository.findAll().forEach(process -> {
             if(evaluateProcessLogic(jsonObject, process)){
                 process.getColumnList().forEach(column ->
                         successRepository.save(AnalysisSuccess.builder()
@@ -45,19 +45,30 @@ public class ResultService {
                 );
                 log.info("Save Result Successful(success_result) logId: " + logId);
             } else {
-                process.getColumnList().forEach(column ->
-                        failRepository.save(AnalysisFail.builder()
-                                .column(column)
-                                .valueR(jsonObject.get(column.getName()).toString())
-                                .logData(logData).build())
-                );
+                process.getColumnList().forEach(column -> {
+                    Object jsonValue = jsonObject.get(column.getName());;
+                    if(jsonValue == null){
+                        jsonValue = "null";
+                    }
+
+                    failRepository.save(AnalysisFail.builder()
+                            .column(column)
+                            .valueR(jsonValue.toString())
+                            .logData(logData).build());
+                });
                 log.info("Save Result Successful(fail_result) logId: " + logId);
             }
         });
     }
 
+    @Transactional
     public boolean evaluateProcessLogic(JSONObject jsonObject, AnalysisProcess process) {
         List<Calculator> entries = calculatorRepository.findByProcessOrderByCalIndex(process);
+
+        if(entries.isEmpty()){
+            log.info("Condition is empty: processId: " + process.getProcessId());
+            return true;
+        }
 
         Deque<Boolean> stack = new ArrayDeque<>();
 
@@ -90,12 +101,13 @@ public class ResultService {
         return stack.pop();
     }
 
-    private Boolean calculateColumn(JSONObject jsonObject, AnalysisCondition condition){
+    @Transactional
+    public Boolean calculateColumn(JSONObject jsonObject, AnalysisCondition condition){
         String operator = condition.getOperator();
         String value = condition.getValueC();
 
         Object jsonValue = jsonObject.get(condition.getColumn().getName());
-        if(jsonValue == null){
+        if (jsonValue == null){
             log.error("Can not find column: " + condition.getColumn().getName());
             return false;
         }
