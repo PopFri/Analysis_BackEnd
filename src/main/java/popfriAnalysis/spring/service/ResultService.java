@@ -43,7 +43,7 @@ public class ResultService {
                                 .valueR(jsonObject.get(column.getName()).toString())
                                 .logData(logData).build())
                 );
-                log.info("Save Result Successful(success_result) logId: " + logId);
+                log.info("Save Result Successful(success_result) logId: " + logId + ", processId: " + process.getProcessId());
             } else {
                 process.getColumnList().forEach(column -> {
                     Object jsonValue = jsonObject.get(column.getName());;
@@ -56,7 +56,7 @@ public class ResultService {
                             .valueR(jsonValue.toString())
                             .logData(logData).build());
                 });
-                log.info("Save Result Successful(fail_result) logId: " + logId);
+                log.info("Save Result Successful(fail_result) logId: " + logId + ", processId: " + process.getProcessId());
             }
         });
     }
@@ -102,26 +102,35 @@ public class ResultService {
     }
 
     @Transactional
-    public Boolean calculateColumn(JSONObject jsonObject, AnalysisCondition condition){
+    public Boolean calculateColumn(JSONObject jsonObject, AnalysisCondition condition) {
         String operator = condition.getOperator();
         String value = condition.getValueC();
 
         Object jsonValue = jsonObject.get(condition.getColumn().getName());
-        if (jsonValue == null){
+        if (jsonValue == null) {
             log.error("Can not find column: " + condition.getColumn().getName());
             return false;
         }
 
         String actualValue = jsonValue.toString();
 
-        return switch (operator) {
-            case "==" -> actualValue.equals(value);
-            case "!=" -> !actualValue.equals(value);
-            case ">" -> Double.parseDouble(actualValue) > Double.parseDouble(value);
-            case "<" -> Double.parseDouble(actualValue) < Double.parseDouble(value);
-            case ">=" -> Double.parseDouble(actualValue) >= Double.parseDouble(value);
-            case "<=" -> Double.parseDouble(actualValue) <= Double.parseDouble(value);
-            default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_OPERATION);
-        };
+        boolean result;
+
+        try {
+            switch (operator) {
+                case "==" -> result = actualValue.equals(value);
+                case "!=" -> result = !actualValue.equals(value);
+                case ">" -> result = Double.parseDouble(actualValue) > Double.parseDouble(value);
+                case "<" -> result = Double.parseDouble(actualValue) < Double.parseDouble(value);
+                case ">=" -> result = Double.parseDouble(actualValue) >= Double.parseDouble(value);
+                case "<=" -> result = Double.parseDouble(actualValue) <= Double.parseDouble(value);
+                default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_OPERATION);
+            }
+        } catch (NumberFormatException err){
+            result = false;
+            log.error("Can Solve the Operator (column name: " + actualValue + ")");
+        }
+
+        return result;
     }
 }
