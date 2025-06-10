@@ -16,6 +16,7 @@ import popfriAnalysis.spring.repository.FailRepository;
 import popfriAnalysis.spring.repository.ProcessRepository;
 import popfriAnalysis.spring.repository.SuccessRepository;
 import popfriAnalysis.spring.web.dto.ResultResponse;
+import popfriAnalysis.spring.repository.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,8 +29,9 @@ public class ResultService {
     private final CalculatorRepository calculatorRepository;
     private final SuccessRepository successRepository;
     private final FailRepository failRepository;
+    private final LogDataRepository logDataRepository;
 
-    @KafkaListener(topics = "matomo-log", groupId = "consumer_group01")
+    @KafkaListener(topics = "matomo-log", groupId = "analysis_server_consumer_01")
     @Transactional
     public void saveResult(String message) throws ParseException {
         JSONParser jsonParser = new JSONParser();
@@ -37,29 +39,42 @@ public class ResultService {
 
         String logId = jsonObject.get("QUERY_pv_id").toString();
 
-        processRepository.findAll().stream().parallel().forEach(process -> {
+        LogData logData = logDataRepository.save(LogData.builder().logId(logId).data(message).build());
+
+        processRepository.findAll().forEach(process -> {
             if(evaluateProcessLogic(jsonObject, process)){
                 process.getColumnList().forEach(column ->
                         successRepository.save(AnalysisSuccess.builder()
                                 .column(column)
                                 .valueR(jsonObject.get(column.getName()).toString())
-                                .logId(logId).build())
+                                .logData(logData).build())
                 );
-                log.info("Save Result Successful(success_result) logId: " + logId);
+                log.info("Save Result Successful(success_result) logId: " + logId + ", processId: " + process.getProcessId());
             } else {
-                process.getColumnList().forEach(column ->
-                        failRepository.save(AnalysisFail.builder()
-                                .column(column)
-                                .valueR(jsonObject.get(column.getName()).toString())
-                                .logId(logId).build())
-                );
-                log.info("Save Result Successful(fail_result) logId: " + logId);
+                process.getColumnList().forEach(column -> {
+                    Object jsonValue = jsonObject.get(column.getName());;
+                    if(jsonValue == null){
+                        jsonValue = "null";
+                    }
+
+                    failRepository.save(AnalysisFail.builder()
+                            .column(column)
+                            .valueR(jsonValue.toString())
+                            .logData(logData).build());
+                });
+                log.info("Save Result Successful(fail_result) logId: " + logId + ", processId: " + process.getProcessId());
             }
         });
     }
 
+    @Transactional
     public boolean evaluateProcessLogic(JSONObject jsonObject, AnalysisProcess process) {
         List<Calculator> entries = calculatorRepository.findByProcessOrderByCalIndex(process);
+
+        if(entries.isEmpty()){
+            log.info("Condition is empty: processId: " + process.getProcessId());
+            return true;
+        }
 
         Deque<Boolean> stack = new ArrayDeque<>();
 
@@ -92,33 +107,43 @@ public class ResultService {
         return stack.pop();
     }
 
-    private Boolean calculateColumn(JSONObject jsonObject, AnalysisCondition condition){
+    @Transactional
+    public Boolean calculateColumn(JSONObject jsonObject, AnalysisCondition condition) {
         String operator = condition.getOperator();
         String value = condition.getValueC();
 
         Object jsonValue = jsonObject.get(condition.getColumn().getName());
-        if(jsonValue == null){
+        if (jsonValue == null) {
             log.error("Can not find column: " + condition.getColumn().getName());
             return false;
         }
 
         String actualValue = jsonValue.toString();
 
-        return switch (operator) {
-            case "==" -> actualValue.equals(value);
-            case "!=" -> !actualValue.equals(value);
-            case ">" -> Double.parseDouble(actualValue) > Double.parseDouble(value);
-            case "<" -> Double.parseDouble(actualValue) < Double.parseDouble(value);
-            case ">=" -> Double.parseDouble(actualValue) >= Double.parseDouble(value);
-            case "<=" -> Double.parseDouble(actualValue) <= Double.parseDouble(value);
-            default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_OPERATION);
-        };
+        boolean result;
+
+        try {
+            switch (operator) {
+                case "==" -> result = actualValue.equals(value);
+                case "!=" -> result = !actualValue.equals(value);
+                case ">" -> result = Double.parseDouble(actualValue) > Double.parseDouble(value);
+                case "<" -> result = Double.parseDouble(actualValue) < Double.parseDouble(value);
+                case ">=" -> result = Double.parseDouble(actualValue) >= Double.parseDouble(value);
+                case "<=" -> result = Double.parseDouble(actualValue) <= Double.parseDouble(value);
+                default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_OPERATION);
+            }
+        } catch (NumberFormatException err){
+            result = false;
+            log.error("Can Solve the Operator (column name: " + actualValue + ")");
+        }
+
+        return result;
     }
 
     public List<ResultResponse.getResultColumn> getResultList(AnalysisProcess process){
         Map<String, List<AnalysisSuccess>> successMap = process.getColumnList().stream()
                 .flatMap(column -> column.getSuccessList().stream())
-                .collect(Collectors.groupingBy(AnalysisSuccess::getLogId));
+                .collect(Collectors.groupingBy(analysisSuccess -> analysisSuccess.getLogData().getLogId()));
 
         List<ResultResponse.getResultColumn> resultList = new ArrayList<>();
         for(String logId : successMap.keySet()){

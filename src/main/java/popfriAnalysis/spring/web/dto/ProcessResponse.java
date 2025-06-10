@@ -19,4 +19,13 @@ public class ProcessResponse {
         String name;
         LocalDate createAt;
     }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "PROCESS_RES_02 : 프로세스 생성 응답")
+    public static class getProcessIdDTO{
+        Long processId;
+    }
 }

@@ -24,10 +24,11 @@ public class AnalysisSuccess extends BaseEntity {
     @Column(name = "value_r", length = 1000)
     private String  valueR;
 
-    @Column(name = "log_id", length = 1000)
-    private String logId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "column_id")
     private AnalysisColumn column;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "log_id")
+    private LogData logData;
 }

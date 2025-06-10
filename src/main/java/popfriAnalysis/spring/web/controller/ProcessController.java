@@ -20,7 +20,7 @@ public class ProcessController {
 
     @PostMapping("")
     @Operation(summary = "분석 프로세스 추가", description = "프로세스 이름을 입력받아 저장")
-    public ApiResponse<Boolean> addAnalysisColumn(@RequestBody ProcessRequest.AddAnalysisProcessDto request){
+    public ApiResponse<ProcessResponse.getProcessIdDTO> addAnalysisColumn(@RequestBody ProcessRequest.AddAnalysisProcessDto request){
 
         return ApiResponse.onSuccess(processService.addAnalysisProcess(request.getName()));
     }
