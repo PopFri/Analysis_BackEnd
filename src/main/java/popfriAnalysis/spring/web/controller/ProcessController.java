@@ -29,4 +29,10 @@ public class ProcessController {
     public ApiResponse<List<ProcessResponse.getProcessListResDTO>> getAnalysisColumn(){
         return ApiResponse.onSuccess(processService.getProcessList());
     }
+
+    @DeleteMapping("")
+    @Operation(summary = "분석 프로세스 삭제", description = "프로세스 삭제")
+    public ApiResponse<Boolean> deleteAnalysisColumn(@RequestParam Long id){
+        return ApiResponse.onSuccess(processService.deleteAnalysisProcess(id));
+    }
 }

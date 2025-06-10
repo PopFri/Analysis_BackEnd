@@ -30,6 +30,11 @@ public class ProcessService {
         return process.getProcessId();
     }
 
+    public Boolean deleteAnalysisProcess(Long processId){
+        processRepository.deleteById(processId);
+        return true;
+    }
+
     public List<ProcessResponse.getProcessListResDTO> getProcessList(){
         return processRepository.findAll().stream()
                 .sorted(Comparator.comparing(BaseEntity::getCreatedAt).reversed())
