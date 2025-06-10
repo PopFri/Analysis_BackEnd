@@ -11,9 +11,15 @@ import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
 import popfriAnalysis.spring.apiPayload.exception.handler.ResultHandler;
 import popfriAnalysis.spring.domain.*;
+import popfriAnalysis.spring.repository.CalculatorRepository;
+import popfriAnalysis.spring.repository.FailRepository;
+import popfriAnalysis.spring.repository.ProcessRepository;
+import popfriAnalysis.spring.repository.SuccessRepository;
+import popfriAnalysis.spring.web.dto.ResultResponse;
 import popfriAnalysis.spring.repository.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -132,5 +138,47 @@ public class ResultService {
         }
 
         return result;
+    }
+
+    public List<ResultResponse.getResultColumn> getResultList(AnalysisProcess process){
+        Map<String, List<AnalysisSuccess>> successMap = process.getColumnList().stream()
+                .flatMap(column -> column.getSuccessList().stream())
+                .collect(Collectors.groupingBy(analysisSuccess -> analysisSuccess.getLogData().getLogId()));
+
+        List<ResultResponse.getResultColumn> resultList = new ArrayList<>();
+        for(String logId : successMap.keySet()){
+            resultList.add(ResultResponse.getResultColumn.builder()
+                    .logId(logId)
+                    .columnList(successMap.get(logId)
+                            .stream()
+                            .map(result -> ResultResponse.getResultColumn.columnDto.builder()
+                                    .name(result.getColumn().getName())
+                                    .value(result.getValueR())
+                                    .build())
+                            .toList())
+                    .build());
+        }
+
+        return resultList;
+    }
+
+    public List<ResultResponse.getResultColumn> sortResultList(List<ResultResponse.getResultColumn> dtoList, String columnName, String order){
+        if(!(order.equals("asc") || order.equals("ASC") ||order.equals("desc") || order.equals("DESC"))){
+            throw new ResultHandler(ErrorStatus._NOT_EXIST_SORT);
+        }
+
+        dtoList.sort(Comparator.comparing(dto -> {
+            Optional<ResultResponse.getResultColumn.columnDto> sortColumnDto = dto.getColumnList().stream()
+                    .filter(columnDto -> columnDto.getName().equals(columnName))
+                    .findFirst();
+
+            return sortColumnDto.map(ResultResponse.getResultColumn.columnDto::getValue).orElse(null);
+        }));
+
+        if(order.equals("desc") || order.equals("DESC")){
+            Collections.reverse(dtoList);
+        }
+
+        return dtoList;
     }
 }

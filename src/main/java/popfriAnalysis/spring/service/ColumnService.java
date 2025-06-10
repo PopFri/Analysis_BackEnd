@@ -3,6 +3,8 @@ package popfriAnalysis.spring.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
+import popfriAnalysis.spring.apiPayload.exception.handler.ColumnHandler;
 import popfriAnalysis.spring.domain.AnalysisColumn;
 import popfriAnalysis.spring.domain.AnalysisProcess;
 import popfriAnalysis.spring.repository.CalculatorRepository;
@@ -46,5 +48,9 @@ public class ColumnService {
                         .columnName(analysisColumn.getName())
                         .build())
                 .toList();
+    }
+
+    public AnalysisColumn getColumnToName(AnalysisProcess process, String name){
+        return columnRepository.findByProcessAndName(process, name).orElseThrow(() -> new ColumnHandler(ErrorStatus._NOT_EXIST_COLUMN));
     }
 }
