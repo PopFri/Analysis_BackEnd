@@ -161,4 +161,24 @@ public class ResultService {
 
         return resultList;
     }
+
+    public List<ResultResponse.getResultColumn> sortResultList(List<ResultResponse.getResultColumn> dtoList, String columnName, String order){
+        if(!(order.equals("asc") || order.equals("ASC") ||order.equals("desc") || order.equals("DESC"))){
+            throw new ResultHandler(ErrorStatus._NOT_EXIST_SORT);
+        }
+
+        dtoList.sort(Comparator.comparing(dto -> {
+            Optional<ResultResponse.getResultColumn.columnDto> sortColumnDto = dto.getColumnList().stream()
+                    .filter(columnDto -> columnDto.getName().equals(columnName))
+                    .findFirst();
+
+            return sortColumnDto.map(ResultResponse.getResultColumn.columnDto::getValue).orElse(null);
+        }));
+
+        if(order.equals("desc") || order.equals("DESC")){
+            Collections.reverse(dtoList);
+        }
+
+        return dtoList;
+    }
 }
