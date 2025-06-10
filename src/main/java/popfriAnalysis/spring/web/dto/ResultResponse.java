@@ -26,4 +26,14 @@ public class ResultResponse {
             String value;
         }
     }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "RESULT_RES_02 : 필터링별 성공 데이터 갯수 응답")
+    public static class successDataCoundDto{
+        String condition;
+        Long successCount;
+    }
 }

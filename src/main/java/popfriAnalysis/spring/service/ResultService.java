@@ -79,20 +79,36 @@ public class ResultService {
         Deque<Boolean> stack = new ArrayDeque<>();
 
         for (Calculator entry : entries) {
+            AnalysisCondition condition = entry.getCondition();
             if (entry.getCondition() != null) {
                 // 피연산자: 조건 평가
                 boolean result = calculateColumn(jsonObject, entry.getCondition());
+                if(result) {
+                    condition.setSuccessCount(condition.getSuccessCount() + 1);
+                }else {
+                    condition.setFailCount(condition.getFailCount() + 1);
+                }
                 stack.push(result);
             } else if (entry.getRelation() != null) {
                 switch (entry.getRelation()) {
                     case "AND" -> {
                         boolean right = stack.pop();
                         boolean left = stack.pop();
+                        if(left && right) {
+                            condition.setSuccessCount(condition.getSuccessCount() + 1);
+                        }else {
+                            condition.setFailCount(condition.getFailCount() + 1);
+                        }
                         stack.push(left && right);
                     }
                     case "OR" -> {
                         boolean right = stack.pop();
                         boolean left = stack.pop();
+                        if(left || right) {
+                            condition.setSuccessCount(condition.getSuccessCount() + 1);
+                        }else {
+                            condition.setFailCount(condition.getFailCount() + 1);
+                        }
                         stack.push(left || right);
                     }
                     default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_RELATION);
@@ -161,4 +177,5 @@ public class ResultService {
 
         return resultList;
     }
+
 }
