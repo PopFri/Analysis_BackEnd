@@ -180,7 +180,7 @@ public class ResultService {
 
     public ResultResponse.successDataCountDto successDataCountByCondition(Long processId) {
         List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
-        List<ResultResponse.successDataCountDto.conditionDto> successDataCountDtoList = new ArrayList<>();
+        List<ResultResponse.conditionDto> successDataCountDtoList = new ArrayList<>();
         Integer totalCount = 0;
         for(Calculator calculator : calculatorList){
             AnalysisCondition condition = calculator.getCondition();
@@ -193,7 +193,7 @@ public class ResultService {
             Integer successCount = condition.getSuccessCount() != null ? condition.getSuccessCount() : 0;
             Integer failCount = condition.getFailCount() != null ? condition.getFailCount() : 0;
 
-            successDataCountDtoList.add(ResultResponse.successDataCountDto.conditionDto.builder()
+            successDataCountDtoList.add(ResultResponse.conditionDto.builder()
                     .condition(strCondition)
                     .successCount(successCount)
                     .build());

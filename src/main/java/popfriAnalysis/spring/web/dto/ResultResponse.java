@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class ResultResponse {
@@ -35,13 +36,24 @@ public class ResultResponse {
     public static class successDataCountDto{
         Integer totalCount;
         List<conditionDto> conditionList;
-        @Builder
-        @Getter
-        @NoArgsConstructor
-        @AllArgsConstructor
-        public static class conditionDto{
-            String condition;
-            Integer successCount;
-        }
+    }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "RESULT_RES_03 : 시간별 필터링 성공 데이터 갯수 응답")
+    public static class successDataByTimeDto{
+        LocalDateTime time;
+        List<conditionDto> conditionList;
+    }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class conditionDto{
+        String condition;
+        Integer successCount;
     }
 }
