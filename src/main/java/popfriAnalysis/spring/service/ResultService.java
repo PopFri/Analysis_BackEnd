@@ -202,29 +202,50 @@ public class ResultService {
                 .build();
     }
 
-    public ResultResponse.successDataByTimeDto successDataCountByTime(Long processId) {
+    public List<ResultResponse.successDataByTimeDto> successDataCountByTime(Long processId) {
         List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
-        List<ResultResponse.conditionDto> successDataCountDtoList = new ArrayList<>();
-        LocalDateTime localDateTime = LocalDateTime.now();
-        for(Calculator calculator : calculatorList){
+        Map<LocalDateTime, Map<String, Integer>> groupedMap = new HashMap<>();
+        for (Calculator calculator : calculatorList) {
             AnalysisCondition condition = calculator.getCondition();
             if (condition == null || condition.getColumn() == null) continue;
+
             String columnName = condition.getColumn().getName();
             String operator = condition.getOperator();
             String value = condition.getValueC();
             String strCondition = columnName + " " + operator + " " + value;
 
-            Integer successCount = condition.getSuccessCount() != null ? condition.getSuccessCount() : 0;
+            List<AnalysisSuccess> successList = condition.getColumn().getSuccessList();
+            if (successList == null) continue;
 
-            successDataCountDtoList.add(ResultResponse.conditionDto.builder()
-                    .condition(strCondition)
-                    .successCount(successCount)
-                    .build());
+            for (AnalysisSuccess success : successList) {
+                LocalDateTime time = success.getCreatedAt();
+                int roundedMinute = (time.getMinute() / 5) * 5;
+                LocalDateTime roundedTime = time.withMinute(roundedMinute).withSecond(0).withNano(0);
+
+                groupedMap
+                        .computeIfAbsent(roundedTime, k -> new HashMap<>())
+                        .merge(strCondition, 1, Integer::sum);
+            }
         }
+        return groupedMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .limit(10)
+                .map(entry -> {
+                    LocalDateTime time = entry.getKey();
+                    Map<String, Integer> condMap = entry.getValue();
 
-        return ResultResponse.successDataByTimeDto.builder()
-                .time(localDateTime)
-                .conditionList(successDataCountDtoList)
-                .build();
+                    List<ResultResponse.conditionDto> conditionList = condMap.entrySet().stream()
+                            .map(e -> ResultResponse.conditionDto.builder()
+                                    .condition(e.getKey())
+                                    .successCount(e.getValue())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    return ResultResponse.successDataByTimeDto.builder()
+                            .time(time)
+                            .conditionList(conditionList)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 }
