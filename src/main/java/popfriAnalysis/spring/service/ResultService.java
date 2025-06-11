@@ -18,6 +18,7 @@ import popfriAnalysis.spring.repository.SuccessRepository;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 import popfriAnalysis.spring.repository.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,12 +44,17 @@ public class ResultService {
 
         processRepository.findAll().forEach(process -> {
             if(evaluateProcessLogic(jsonObject, process)){
-                process.getColumnList().forEach(column ->
-                        successRepository.save(AnalysisSuccess.builder()
-                                .column(column)
-                                .valueR(jsonObject.get(column.getName()).toString())
-                                .logData(logData).build())
-                );
+                process.getColumnList().forEach(column -> {
+                    Object jsonValue = jsonObject.get(column.getName());
+                    if(jsonValue == null){
+                        jsonValue = "null";
+                    }
+
+                    successRepository.save(AnalysisSuccess.builder()
+                            .column(column)
+                            .valueR(jsonValue.toString())
+                            .logData(logData).build());
+                });
                 log.info("Save Result Successful(success_result) logId: " + logId + ", processId: " + process.getProcessId());
             } else {
                 process.getColumnList().forEach(column -> {
@@ -79,8 +85,8 @@ public class ResultService {
         Deque<Boolean> stack = new ArrayDeque<>();
 
         for (Calculator entry : entries) {
-            AnalysisCondition condition = entry.getCondition();
             if (entry.getCondition() != null) {
+                AnalysisCondition condition = entry.getCondition();
                 // 피연산자: 조건 평가
                 boolean result = calculateColumn(jsonObject, entry.getCondition());
                 if(result) {
@@ -94,21 +100,11 @@ public class ResultService {
                     case "AND" -> {
                         boolean right = stack.pop();
                         boolean left = stack.pop();
-                        if(left && right) {
-                            condition.setSuccessCount(condition.getSuccessCount() + 1);
-                        }else {
-                            condition.setFailCount(condition.getFailCount() + 1);
-                        }
                         stack.push(left && right);
                     }
                     case "OR" -> {
                         boolean right = stack.pop();
                         boolean left = stack.pop();
-                        if(left || right) {
-                            condition.setSuccessCount(condition.getSuccessCount() + 1);
-                        }else {
-                            condition.setFailCount(condition.getFailCount() + 1);
-                        }
                         stack.push(left || right);
                     }
                     default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_RELATION);
@@ -202,6 +198,32 @@ public class ResultService {
         }
         return ResultResponse.successDataCountDto.builder()
                 .totalCount(totalCount)
+                .conditionList(successDataCountDtoList)
+                .build();
+    }
+
+    public ResultResponse.successDataByTimeDto successDataCountByTime(Long processId) {
+        List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
+        List<ResultResponse.conditionDto> successDataCountDtoList = new ArrayList<>();
+        LocalDateTime localDateTime = LocalDateTime.now();
+        for(Calculator calculator : calculatorList){
+            AnalysisCondition condition = calculator.getCondition();
+            if (condition == null || condition.getColumn() == null) continue;
+            String columnName = condition.getColumn().getName();
+            String operator = condition.getOperator();
+            String value = condition.getValueC();
+            String strCondition = columnName + " " + operator + " " + value;
+
+            Integer successCount = condition.getSuccessCount() != null ? condition.getSuccessCount() : 0;
+
+            successDataCountDtoList.add(ResultResponse.conditionDto.builder()
+                    .condition(strCondition)
+                    .successCount(successCount)
+                    .build());
+        }
+
+        return ResultResponse.successDataByTimeDto.builder()
+                .time(localDateTime)
                 .conditionList(successDataCountDtoList)
                 .build();
     }
