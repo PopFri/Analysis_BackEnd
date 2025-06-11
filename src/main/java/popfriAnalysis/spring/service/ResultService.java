@@ -178,6 +178,7 @@ public class ResultService {
         List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
         List<ResultResponse.conditionDto> successDataCountDtoList = new ArrayList<>();
         Integer totalCount = 0;
+        Integer conditionCount = 0;
         for(Calculator calculator : calculatorList){
             AnalysisCondition condition = calculator.getCondition();
             if (condition == null || condition.getColumn() == null) continue;
@@ -195,16 +196,21 @@ public class ResultService {
                     .build());
 
             totalCount += successCount + failCount;
+            conditionCount++;
         }
         return ResultResponse.successDataCountDto.builder()
-                .totalCount(totalCount)
+                .totalCount(totalCount/conditionCount)
                 .conditionList(successDataCountDtoList)
                 .build();
     }
 
     public List<ResultResponse.successDataByTimeDto> successDataCountByTime(Long processId) {
-        List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
+        List<Calculator> calculatorList = processRepository.findById(processId)
+                .orElseThrow().getCalculatorList();
+
+        // <시간, <조건문자열, 성공카운트>> 구조로 저장
         Map<LocalDateTime, Map<String, Integer>> groupedMap = new HashMap<>();
+
         for (Calculator calculator : calculatorList) {
             AnalysisCondition condition = calculator.getCondition();
             if (condition == null || condition.getColumn() == null) continue;
@@ -227,6 +233,8 @@ public class ResultService {
                         .merge(strCondition, 1, Integer::sum);
             }
         }
+
+        // 시간순 정렬 후 상위 10개
         return groupedMap.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .limit(10)
