@@ -178,19 +178,31 @@ public class ResultService {
         return resultList;
     }
 
-    public List<ResultResponse.successDataCountDto> successDataCountByCondition(Long processId) {
+    public ResultResponse.successDataCountDto successDataCountByCondition(Long processId) {
         List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
-        List<ResultResponse.successDataCountDto> successDataCountDtoList = new ArrayList<>();
+        List<ResultResponse.successDataCountDto.conditionDto> successDataCountDtoList = new ArrayList<>();
+        Integer totalCount = 0;
         for(Calculator calculator : calculatorList){
-            String columnName = calculator.getCondition().getColumn().getName();
-            String operator = calculator.getCondition().getOperator();
-            String value = calculator.getCondition().getValueC();
-            String strCondition = new String(columnName + " " + operator + " " + value);
-            successDataCountDtoList.add(ResultResponse.successDataCountDto.builder()
-                            .condition(strCondition)
-                            .successCount(calculator.getCondition().getSuccessCount())
+            AnalysisCondition condition = calculator.getCondition();
+            if (condition == null || condition.getColumn() == null) continue;
+            String columnName = condition.getColumn().getName();
+            String operator = condition.getOperator();
+            String value = condition.getValueC();
+            String strCondition = columnName + " " + operator + " " + value;
+
+            Integer successCount = condition.getSuccessCount() != null ? condition.getSuccessCount() : 0;
+            Integer failCount = condition.getFailCount() != null ? condition.getFailCount() : 0;
+
+            successDataCountDtoList.add(ResultResponse.successDataCountDto.conditionDto.builder()
+                    .condition(strCondition)
+                    .successCount(successCount)
                     .build());
+
+            totalCount += successCount + failCount;
         }
-        return successDataCountDtoList;
+        return ResultResponse.successDataCountDto.builder()
+                .totalCount(totalCount)
+                .conditionList(successDataCountDtoList)
+                .build();
     }
 }

@@ -33,7 +33,15 @@ public class ResultResponse {
     @AllArgsConstructor
     @Schema(title = "RESULT_RES_02 : 필터링별 성공 데이터 갯수 응답")
     public static class successDataCountDto{
-        String condition;
-        Integer successCount;
+        Integer totalCount;
+        List<conditionDto> conditionList;
+        @Builder
+        @Getter
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class conditionDto{
+            String condition;
+            Integer successCount;
+        }
     }
 }
