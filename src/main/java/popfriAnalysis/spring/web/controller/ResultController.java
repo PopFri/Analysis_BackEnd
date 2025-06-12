@@ -37,11 +37,4 @@ public class ResultController {
 
         return ApiResponse.onSuccess(resultService.successDataCountByCondition(processId));
     }
-
-    @GetMapping("/time")
-    @Operation(summary = "성공 데이터 시간별 결과 조회", description = "프로세스 아이디를 입력받아 시간 별 성공 데이터 수 반환")
-    public ApiResponse<List<ResultResponse.successDataByTimeDto>> getResultSuccessDataByTime(@RequestParam Long processId){
-
-        return ApiResponse.onSuccess(resultService.successDataCountByTime(processId));
-    }
 }
