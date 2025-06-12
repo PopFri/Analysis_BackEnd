@@ -176,7 +176,7 @@ public class ResultService {
 
     public ResultResponse.successDataCountDto successDataCountByCondition(Long processId) {
         List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
-        List<ResultResponse.conditionDto> successDataCountDtoList = new ArrayList<>();
+        List<ResultResponse.successDataCountDto.conditionDto> successDataCountDtoList = new ArrayList<>();
         Integer totalCount = 0;
         Integer conditionCount = 0;
         for(Calculator calculator : calculatorList){
@@ -190,7 +190,7 @@ public class ResultService {
             Integer successCount = condition.getSuccessCount() != null ? condition.getSuccessCount() : 0;
             Integer failCount = condition.getFailCount() != null ? condition.getFailCount() : 0;
 
-            successDataCountDtoList.add(ResultResponse.conditionDto.builder()
+            successDataCountDtoList.add(ResultResponse.successDataCountDto.conditionDto.builder()
                     .condition(strCondition)
                     .successCount(successCount)
                     .build());
@@ -202,58 +202,5 @@ public class ResultService {
                 .totalCount(totalCount/conditionCount)
                 .conditionList(successDataCountDtoList)
                 .build();
-    }
-
-    public List<ResultResponse.successDataByTimeDto> successDataCountByTime(Long processId) {
-        List<Calculator> calculatorList = processRepository.findById(processId)
-                .orElseThrow().getCalculatorList();
-
-        // <시간, <조건문자열, 성공카운트>> 구조로 저장
-        Map<LocalDateTime, Map<String, Integer>> groupedMap = new HashMap<>();
-
-        for (Calculator calculator : calculatorList) {
-            AnalysisCondition condition = calculator.getCondition();
-            if (condition == null || condition.getColumn() == null) continue;
-
-            String columnName = condition.getColumn().getName();
-            String operator = condition.getOperator();
-            String value = condition.getValueC();
-            String strCondition = columnName + " " + operator + " " + value;
-
-            List<AnalysisSuccess> successList = condition.getColumn().getSuccessList();
-            if (successList == null) continue;
-
-            for (AnalysisSuccess success : successList) {
-                LocalDateTime time = success.getCreatedAt();
-                int roundedMinute = (time.getMinute() / 5) * 5;
-                LocalDateTime roundedTime = time.withMinute(roundedMinute).withSecond(0).withNano(0);
-
-                groupedMap
-                        .computeIfAbsent(roundedTime, k -> new HashMap<>())
-                        .merge(strCondition, 1, Integer::sum);
-            }
-        }
-
-        // 시간순 정렬 후 상위 10개
-        return groupedMap.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .limit(10)
-                .map(entry -> {
-                    LocalDateTime time = entry.getKey();
-                    Map<String, Integer> condMap = entry.getValue();
-
-                    List<ResultResponse.conditionDto> conditionList = condMap.entrySet().stream()
-                            .map(e -> ResultResponse.conditionDto.builder()
-                                    .condition(e.getKey())
-                                    .successCount(e.getValue())
-                                    .build())
-                            .collect(Collectors.toList());
-
-                    return ResultResponse.successDataByTimeDto.builder()
-                            .time(time)
-                            .conditionList(conditionList)
-                            .build();
-                })
-                .collect(Collectors.toList());
     }
 }

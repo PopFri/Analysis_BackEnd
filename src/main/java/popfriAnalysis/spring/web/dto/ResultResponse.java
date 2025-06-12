@@ -36,24 +36,34 @@ public class ResultResponse {
     public static class successDataCountDto{
         Integer totalCount;
         List<conditionDto> conditionList;
+
+        @Builder
+        @Getter
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class conditionDto{
+            String condition;
+            Integer successCount;
+        }
     }
 
     @Builder
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(title = "RESULT_RES_03 : 시간별 필터링 성공 데이터 갯수 응답")
-    public static class successDataByTimeDto{
-        LocalDateTime time;
-        List<conditionDto> conditionList;
-    }
+    @Schema(title = "RESULT_RES_03 : 프로세스별 성공, 실패 데이터 응답")
+    public static class successAndFailDataDto{
+        List<resultDataDto> successList;
+        List<resultDataDto> failList;
 
-    @Builder
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class conditionDto{
-        String condition;
-        Integer successCount;
+        @Builder
+        @Getter
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class resultDataDto{
+            LocalDateTime createdAt;
+            String column;
+            String value;
+        }
     }
 }
