@@ -175,11 +175,11 @@ public class ResultService {
     }
 
     public ResultResponse.successDataCountDto successDataCountByCondition(Long processId) {
-        List<Calculator> calculatorList= processRepository.findById(processId).orElseThrow().getCalculatorList();
+        List<Calculator> calculatorList = processRepository.findById(processId).orElseThrow().getCalculatorList();
         List<ResultResponse.successDataCountDto.conditionDto> successDataCountDtoList = new ArrayList<>();
         Integer totalCount = 0;
         Integer conditionCount = 0;
-        for(Calculator calculator : calculatorList){
+        for (Calculator calculator : calculatorList) {
             AnalysisCondition condition = calculator.getCondition();
             if (condition == null || condition.getColumn() == null) continue;
             String columnName = condition.getColumn().getName();
@@ -199,8 +199,28 @@ public class ResultService {
             conditionCount++;
         }
         return ResultResponse.successDataCountDto.builder()
-                .totalCount(totalCount/conditionCount)
+                .totalCount(totalCount / conditionCount)
                 .conditionList(successDataCountDtoList)
                 .build();
+    }
+
+    public List<ResultResponse.getResultColumn> sortResultList(List<ResultResponse.getResultColumn> dtoList, String columnName, String order){
+        if(!(order.equals("asc") || order.equals("ASC") ||order.equals("desc") || order.equals("DESC"))){
+            throw new ResultHandler(ErrorStatus._NOT_EXIST_SORT);
+        }
+
+        dtoList.sort(Comparator.comparing(dto -> {
+            Optional<ResultResponse.getResultColumn.columnDto> sortColumnDto = dto.getColumnList().stream()
+                    .filter(columnDto -> columnDto.getName().equals(columnName))
+                    .findFirst();
+
+            return sortColumnDto.map(ResultResponse.getResultColumn.columnDto::getValue).orElse(null);
+        }));
+
+        if(order.equals("desc") || order.equals("DESC")){
+            Collections.reverse(dtoList);
+        }
+
+        return dtoList;
     }
 }
