@@ -22,6 +22,12 @@ public class AnalysisCondition {
     @Column(name = "value_c", length = 10000)
     private String valueC;
 
+    @Column(name = "success_count")
+    private Integer successCount;
+
+    @Column(name = "fail_count")
+    private Integer failCount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "column_id")
     private AnalysisColumn column;

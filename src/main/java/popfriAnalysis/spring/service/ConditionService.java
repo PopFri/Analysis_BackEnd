@@ -91,6 +91,8 @@ public class ConditionService {
                         .column(column)
                         .operator(dto.getOp())
                         .valueC(dto.getValue())
+                        .successCount(0)
+                        .failCount(0)
                         .build()
         );
 

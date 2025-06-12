@@ -43,4 +43,11 @@ public class ResultController {
 
         return ApiResponse.onSuccess(dtoList);
     }
+
+    @GetMapping("/success")
+    @Operation(summary = "성공 데이터 결과 조회", description = "프로세스 아이디를 입력받아 조건 별 성공 데이터 수 반환")
+    public ApiResponse<ResultResponse.successDataCountDto> getResultSuccessDataToGraph(@RequestParam Long processId){
+
+        return ApiResponse.onSuccess(resultService.successDataCountByCondition(processId));
+    }
 }
