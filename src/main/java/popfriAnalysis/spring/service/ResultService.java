@@ -6,6 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
@@ -18,7 +22,6 @@ import popfriAnalysis.spring.repository.SuccessRepository;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 import popfriAnalysis.spring.repository.*;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -223,5 +226,47 @@ public class ResultService {
         }
 
         return dtoList;
+    }
+
+    public ResultResponse.successOrFailDataDto successDataByProcess(Long processId, int page, int size) {
+        List<AnalysisColumn> columnList = processRepository.findById(processId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 프로세스 ID")).getColumnList();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<AnalysisSuccess> successPage = successRepository.findByColumnIn(columnList, pageable);
+
+        List<ResultResponse.successOrFailDataDto.resultDataDto> successDtoList = successPage.getContent().stream()
+                .map(success -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
+                        .column(success.getColumn().getName())
+                        .createdAt(success.getCreatedAt())
+                        .value(success.getValueR())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ResultResponse.successOrFailDataDto.builder()
+                .dataList(successDtoList)
+                .totalDataCount(successPage.getTotalElements())
+                .build();
+    }
+
+    public ResultResponse.successOrFailDataDto failDataByProcess(Long processId, int page, int size) {
+        List<AnalysisColumn> columnList = processRepository.findById(processId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 프로세스 ID")).getColumnList();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<AnalysisFail> failPage = failRepository.findByColumnIn(columnList, pageable);
+
+        List<ResultResponse.successOrFailDataDto.resultDataDto> failDtoList = failPage.getContent().stream()
+                .map(fail -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
+                        .column(fail.getColumn().getName())
+                        .createdAt(fail.getCreatedAt())
+                        .value(fail.getValueR())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ResultResponse.successOrFailDataDto.builder()
+                .dataList(failDtoList)
+                .totalDataCount(failPage.getTotalElements())
+                .build();
     }
 }

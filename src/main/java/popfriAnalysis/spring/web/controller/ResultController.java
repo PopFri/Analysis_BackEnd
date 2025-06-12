@@ -50,4 +50,18 @@ public class ResultController {
 
         return ApiResponse.onSuccess(resultService.successDataCountByCondition(processId));
     }
+
+    @GetMapping("/record/success")
+    @Operation(summary = "성공 데이터 결과 조회", description = "프로세스 아이디를 입력받아 성공, 실패 데이터 반환")
+    public ApiResponse<ResultResponse.successOrFailDataDto> getSuccessResultRecordData(@RequestParam Long processId, @RequestParam int page){
+
+        return ApiResponse.onSuccess(resultService.successDataByProcess(processId, page, 12));
+    }
+
+    @GetMapping("/record/fail")
+    @Operation(summary = "성공 데이터 결과 조회", description = "프로세스 아이디를 입력받아 성공, 실패 데이터 반환")
+    public ApiResponse<ResultResponse.successOrFailDataDto> getFailResultRecordData(@RequestParam Long processId, @RequestParam int page){
+
+        return ApiResponse.onSuccess(resultService.failDataByProcess(processId, page, 12));
+    }
 }

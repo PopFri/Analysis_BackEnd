@@ -52,10 +52,10 @@ public class ResultResponse {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(title = "RESULT_RES_03 : 프로세스별 성공, 실패 데이터 응답")
-    public static class successAndFailDataDto{
-        List<resultDataDto> successList;
-        List<resultDataDto> failList;
+    @Schema(title = "RESULT_RES_03 : 프로세스별 성공 데이터 응답")
+    public static class successOrFailDataDto{
+        List<resultDataDto> dataList;
+        Long totalDataCount;
 
         @Builder
         @Getter
