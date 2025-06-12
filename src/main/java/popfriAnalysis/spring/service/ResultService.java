@@ -193,6 +193,7 @@ public class ResultService {
             successDataCountDtoList.add(ResultResponse.successDataCountDto.conditionDto.builder()
                     .condition(strCondition)
                     .successCount(successCount)
+                    .failedCount(failCount)
                     .build());
 
             totalCount += successCount + failCount;

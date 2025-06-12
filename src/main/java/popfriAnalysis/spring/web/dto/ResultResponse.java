@@ -44,6 +44,7 @@ public class ResultResponse {
         public static class conditionDto{
             String condition;
             Integer successCount;
+            Integer failedCount;
         }
     }
 
