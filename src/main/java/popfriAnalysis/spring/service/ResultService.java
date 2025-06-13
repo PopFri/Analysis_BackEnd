@@ -22,6 +22,8 @@ import popfriAnalysis.spring.repository.SuccessRepository;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 import popfriAnalysis.spring.repository.*;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -228,45 +230,71 @@ public class ResultService {
         return dtoList;
     }
 
-    public ResultResponse.successOrFailDataDto successDataByProcess(Long processId, int page, int size) {
+    public ResultResponse.SuccessOrFailResponseDto successDataByProcess(Long processId, int page, int size) {
         List<AnalysisColumn> columnList = processRepository.findById(processId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 프로세스 ID")).getColumnList();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<AnalysisSuccess> successPage = successRepository.findByColumnIn(columnList, pageable);
 
-        List<ResultResponse.successOrFailDataDto.resultDataDto> successDtoList = successPage.getContent().stream()
-                .map(success -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
-                        .column(success.getColumn().getName())
-                        .createdAt(success.getCreatedAt())
-                        .value(success.getValueR())
-                        .build())
+        Map<LocalDateTime, List<AnalysisSuccess>> groupedByTime = successPage.getContent().stream()
+                .collect(Collectors.groupingBy(s -> s.getCreatedAt().truncatedTo(ChronoUnit.SECONDS)));
+
+        List<ResultResponse.successOrFailDataDto> groupedList = groupedByTime.entrySet().stream()
+                .map(entry -> {
+                    LocalDateTime time = entry.getKey();
+                    List<ResultResponse.successOrFailDataDto.resultDataDto> dataList = entry.getValue().stream()
+                            .map(s -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
+                                    .column(s.getColumn().getName())
+                                    .value(s.getValueR())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    return ResultResponse.successOrFailDataDto.builder()
+                            .createdAt(time)
+                            .dataList(dataList)
+                            .build();
+                })
+                .sorted(Comparator.comparing(ResultResponse.successOrFailDataDto::getCreatedAt).reversed())
                 .collect(Collectors.toList());
 
-        return ResultResponse.successOrFailDataDto.builder()
-                .dataList(successDtoList)
-                .totalDataCount(successPage.getTotalElements())
+        return ResultResponse.SuccessOrFailResponseDto.builder()
+                .totalCount(successPage.getTotalElements())
+                .data(groupedList)
                 .build();
     }
 
-    public ResultResponse.successOrFailDataDto failDataByProcess(Long processId, int page, int size) {
+    public ResultResponse.SuccessOrFailResponseDto failDataByProcess(Long processId, int page, int size) {
         List<AnalysisColumn> columnList = processRepository.findById(processId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 프로세스 ID")).getColumnList();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<AnalysisFail> failPage = failRepository.findByColumnIn(columnList, pageable);
 
-        List<ResultResponse.successOrFailDataDto.resultDataDto> failDtoList = failPage.getContent().stream()
-                .map(fail -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
-                        .column(fail.getColumn().getName())
-                        .createdAt(fail.getCreatedAt())
-                        .value(fail.getValueR())
-                        .build())
+        Map<LocalDateTime, List<AnalysisFail>> groupedByTime = failPage.getContent().stream()
+                .collect(Collectors.groupingBy(fail -> fail.getCreatedAt().truncatedTo(ChronoUnit.SECONDS)));
+
+        List<ResultResponse.successOrFailDataDto> groupedList = groupedByTime.entrySet().stream()
+                .map(entry -> {
+                    LocalDateTime time = entry.getKey();
+                    List<ResultResponse.successOrFailDataDto.resultDataDto> dataList = entry.getValue().stream()
+                            .map(fail -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
+                                    .column(fail.getColumn().getName())
+                                    .value(fail.getValueR())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    return ResultResponse.successOrFailDataDto.builder()
+                            .createdAt(time)
+                            .dataList(dataList)
+                            .build();
+                })
+                .sorted(Comparator.comparing(ResultResponse.successOrFailDataDto::getCreatedAt).reversed())
                 .collect(Collectors.toList());
 
-        return ResultResponse.successOrFailDataDto.builder()
-                .dataList(failDtoList)
-                .totalDataCount(failPage.getTotalElements())
+        return ResultResponse.SuccessOrFailResponseDto.builder()
+                .totalCount(failPage.getTotalElements())
+                .data(groupedList)
                 .build();
     }
 }

@@ -53,16 +53,24 @@ public class ResultResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     @Schema(title = "RESULT_RES_03 : 프로세스별 성공 데이터 응답")
+    public static class SuccessOrFailResponseDto {
+        private Long totalCount;
+        private List<ResultResponse.successOrFailDataDto> data;
+    }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class successOrFailDataDto{
         List<resultDataDto> dataList;
-        Long totalDataCount;
+        LocalDateTime createdAt;
 
         @Builder
         @Getter
         @NoArgsConstructor
         @AllArgsConstructor
         public static class resultDataDto{
-            LocalDateTime createdAt;
             String column;
             String value;
         }
