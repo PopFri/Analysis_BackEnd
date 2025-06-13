@@ -16,7 +16,7 @@ public class ResultResponse {
     @AllArgsConstructor
     @Schema(title = "RESULT_RES_01 : 결과 조회 응답")
     public static class getResultColumn{
-        String logId;
+        Long logId;
         List<columnDto> columnList;
         @Builder
         @Getter

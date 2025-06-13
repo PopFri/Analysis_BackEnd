@@ -38,9 +38,7 @@ public class ResultService {
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObject = (JSONObject) jsonParser.parse(message);
 
-        String logId = jsonObject.get("QUERY_pv_id").toString();
-
-        LogData logData = logDataRepository.save(LogData.builder().logId(logId).data(message).build());
+        LogData logData = logDataRepository.save(LogData.builder().data(message).build());
 
         processRepository.findAll().forEach(process -> {
             if(evaluateProcessLogic(jsonObject, process)){
@@ -55,7 +53,7 @@ public class ResultService {
                             .valueR(jsonValue.toString())
                             .logData(logData).build());
                 });
-                log.info("Save Result Successful(success_result) logId: " + logId + ", processId: " + process.getProcessId());
+                log.info("Save Result Successful(success_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
             } else {
                 process.getColumnList().forEach(column -> {
                     Object jsonValue = jsonObject.get(column.getName());;
@@ -68,7 +66,7 @@ public class ResultService {
                             .valueR(jsonValue.toString())
                             .logData(logData).build());
                 });
-                log.info("Save Result Successful(fail_result) logId: " + logId + ", processId: " + process.getProcessId());
+                log.info("Save Result Successful(fail_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
             }
         });
     }
@@ -153,12 +151,12 @@ public class ResultService {
     }
 
     public List<ResultResponse.getResultColumn> getResultList(AnalysisProcess process){
-        Map<String, List<AnalysisSuccess>> successMap = process.getColumnList().stream()
+        Map<Long, List<AnalysisSuccess>> successMap = process.getColumnList().stream()
                 .flatMap(column -> column.getSuccessList().stream())
                 .collect(Collectors.groupingBy(analysisSuccess -> analysisSuccess.getLogData().getLogId()));
 
         List<ResultResponse.getResultColumn> resultList = new ArrayList<>();
-        for(String logId : successMap.keySet()){
+        for(Long logId : successMap.keySet()){
             resultList.add(ResultResponse.getResultColumn.builder()
                     .logId(logId)
                     .columnList(successMap.get(logId)
