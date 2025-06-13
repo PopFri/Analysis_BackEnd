@@ -19,8 +19,9 @@ import java.util.List;
 @Table(name = "log_data")
 public class LogData extends BaseEntity {
     @Id
-    @Column(name = "log_id", length = 100)
-    private String logId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "log_id")
+    private Long logId;
 
     @Column(name = "data", columnDefinition = "text")
     private String data;
