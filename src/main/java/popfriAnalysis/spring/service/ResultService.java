@@ -235,20 +235,37 @@ public class ResultService {
         List<AnalysisColumn> columnList = processRepository.findById(processId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 프로세스 ID")).getColumnList();
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("resultId")
+        ));
         Page<AnalysisSuccess> successPage = successRepository
-                .findByColumnIn(columnList, pageable); // AnalysisSuccess 기준 페이징
+                .findByColumnIn(columnList, pageable);
 
-        // groupBy logData
         Map<LogData, List<AnalysisSuccess>> groupedMap = successPage.getContent().stream()
-                .collect(Collectors.groupingBy(AnalysisSuccess::getLogData));
+                .collect(Collectors.groupingBy(
+                        AnalysisSuccess::getLogData,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
 
         List<ResultResponse.successOrFailDataDto> groupedList = groupedMap.entrySet().stream()
+                .sorted((e1, e2) -> {
+                    LocalDateTime t1 = e1.getValue().stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.MIN);
+                    LocalDateTime t2 = e2.getValue().stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.MIN);
+                    return t2.compareTo(t1); // 최신순
+                })
                 .map(entry -> {
                     LogData log = entry.getKey();
-                    List<AnalysisSuccess> filteredSuccessList = entry.getValue();
+                    List<AnalysisSuccess> successList = entry.getValue();
 
-                    List<ResultResponse.successOrFailDataDto.resultDataDto> dataList = filteredSuccessList.stream()
+                    List<ResultResponse.successOrFailDataDto.resultDataDto> dataList = successList.stream()
                             .filter(s -> columnList.contains(s.getColumn()))
                             .map(s -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
                                     .column(s.getColumn().getName())
@@ -256,7 +273,7 @@ public class ResultService {
                                     .build())
                             .collect(Collectors.toList());
 
-                    LocalDateTime createdAt = filteredSuccessList.stream()
+                    LocalDateTime createdAt = successList.stream()
                             .map(BaseEntity::getCreatedAt)
                             .max(LocalDateTime::compareTo)
                             .orElse(null);
@@ -267,7 +284,7 @@ public class ResultService {
                             .dataList(dataList)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         return ResultResponse.SuccessOrFailResponseDto.builder()
                 .totalCount(successPage.getTotalElements())
@@ -279,20 +296,37 @@ public class ResultService {
         List<AnalysisColumn> columnList = processRepository.findById(processId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 프로세스 ID")).getColumnList();
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("resultId")
+        ));
         Page<AnalysisFail> failPage = failRepository
-                .findByColumnIn(columnList, pageable); // AnalysisSuccess 기준 페이징
+                .findByColumnIn(columnList, pageable);
 
-        // groupBy logData
         Map<LogData, List<AnalysisFail>> groupedMap = failPage.getContent().stream()
-                .collect(Collectors.groupingBy(AnalysisFail::getLogData));
+                .collect(Collectors.groupingBy(
+                        AnalysisFail::getLogData,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
 
         List<ResultResponse.successOrFailDataDto> groupedList = groupedMap.entrySet().stream()
+                .sorted((e1, e2) -> {
+                    LocalDateTime t1 = e1.getValue().stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.MIN);
+                    LocalDateTime t2 = e2.getValue().stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.MIN);
+                    return t2.compareTo(t1); // 최신순
+                })
                 .map(entry -> {
                     LogData log = entry.getKey();
-                    List<AnalysisFail> filteredFailList = entry.getValue();
+                    List<AnalysisFail> failList = entry.getValue();
 
-                    List<ResultResponse.successOrFailDataDto.resultDataDto> dataList = filteredFailList.stream()
+                    List<ResultResponse.successOrFailDataDto.resultDataDto> dataList = failList.stream()
                             .filter(s -> columnList.contains(s.getColumn()))
                             .map(s -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
                                     .column(s.getColumn().getName())
@@ -300,7 +334,7 @@ public class ResultService {
                                     .build())
                             .collect(Collectors.toList());
 
-                    LocalDateTime createdAt = filteredFailList.stream()
+                    LocalDateTime createdAt = failList.stream()
                             .map(BaseEntity::getCreatedAt)
                             .max(LocalDateTime::compareTo)
                             .orElse(null);
@@ -311,7 +345,7 @@ public class ResultService {
                             .dataList(dataList)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         return ResultResponse.SuccessOrFailResponseDto.builder()
                 .totalCount(failPage.getTotalElements())
