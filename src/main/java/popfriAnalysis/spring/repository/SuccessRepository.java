@@ -9,5 +9,6 @@ import popfriAnalysis.spring.domain.AnalysisSuccess;
 import java.util.List;
 
 public interface SuccessRepository extends JpaRepository<AnalysisSuccess, Long> {
+
     Page<AnalysisSuccess> findByColumnIn(List<AnalysisColumn> columns, Pageable pageable);
 }
