@@ -65,7 +65,7 @@ public class ResultResponse {
     public static class successOrFailDataDto{
         List<resultDataDto> dataList;
         LocalDateTime createdAt;
-        String logId;
+        Long logId;
 
         @Builder
         @Getter
