@@ -15,9 +15,11 @@ import popfriAnalysis.spring.repository.CalculatorRepository;
 import popfriAnalysis.spring.repository.FailRepository;
 import popfriAnalysis.spring.repository.ProcessRepository;
 import popfriAnalysis.spring.repository.SuccessRepository;
+import popfriAnalysis.spring.sse.SseEmitters;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 import popfriAnalysis.spring.repository.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,6 +33,7 @@ public class ResultService {
     private final SuccessRepository successRepository;
     private final FailRepository failRepository;
     private final LogDataRepository logDataRepository;
+    private final SseEmitters sseEmitters;
 
     @KafkaListener(topics = "matomo-log", groupId = "analysis_server_consumer_01")
     @Transactional
@@ -69,6 +72,8 @@ public class ResultService {
                 log.info("Save Result Successful(fail_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
             }
         });
+
+        sseEmitters.getActivity();
     }
 
     @Transactional

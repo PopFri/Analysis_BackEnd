@@ -66,4 +66,15 @@ public class ResultResponse {
             String value;
         }
     }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "RESULT_RES_04 : 일일 활동 통계 반환")
+    public static class getDailyActivityDto{
+        Long cnt;
+        Double changeRate;
+        Double successRate;
+    }
 }
