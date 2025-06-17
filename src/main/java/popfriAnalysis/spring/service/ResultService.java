@@ -6,11 +6,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
 import popfriAnalysis.spring.apiPayload.exception.handler.ResultHandler;
 import popfriAnalysis.spring.domain.*;
+import popfriAnalysis.spring.domain.common.BaseEntity;
 import popfriAnalysis.spring.repository.CalculatorRepository;
 import popfriAnalysis.spring.repository.FailRepository;
 import popfriAnalysis.spring.repository.ProcessRepository;
@@ -19,6 +24,7 @@ import popfriAnalysis.spring.web.dto.ResultResponse;
 import popfriAnalysis.spring.repository.*;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -191,6 +197,7 @@ public class ResultService {
             successDataCountDtoList.add(ResultResponse.successDataCountDto.conditionDto.builder()
                     .condition(strCondition)
                     .successCount(successCount)
+                    .failedCount(failCount)
                     .build());
 
             totalCount += successCount + failCount;
@@ -220,5 +227,127 @@ public class ResultService {
         }
 
         return dtoList;
+    }
+
+    public ResultResponse.SuccessOrFailResponseDto successDataByProcess(Long processId, int page, int size) {
+        List<AnalysisColumn> columnList = processRepository.findById(processId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 프로세스 ID")).getColumnList();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("resultId")
+        ));
+        Page<AnalysisSuccess> successPage = successRepository
+                .findByColumnIn(columnList, pageable);
+
+        Map<LogData, List<AnalysisSuccess>> groupedMap = successPage.getContent().stream()
+                .collect(Collectors.groupingBy(
+                        AnalysisSuccess::getLogData,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        List<ResultResponse.successOrFailDataDto> groupedList = groupedMap.entrySet().stream()
+                .sorted((e1, e2) -> {
+                    LocalDateTime t1 = e1.getValue().stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.MIN);
+                    LocalDateTime t2 = e2.getValue().stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.MIN);
+                    return t2.compareTo(t1); // 최신순
+                })
+                .map(entry -> {
+                    LogData log = entry.getKey();
+                    List<AnalysisSuccess> successList = entry.getValue();
+
+                    List<ResultResponse.successOrFailDataDto.resultDataDto> dataList = successList.stream()
+                            .filter(s -> columnList.contains(s.getColumn()))
+                            .map(s -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
+                                    .column(s.getColumn().getName())
+                                    .value(s.getValueR())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    LocalDateTime createdAt = successList.stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(null);
+
+                    return ResultResponse.successOrFailDataDto.builder()
+                            .logId(log.getLogId())
+                            .createdAt(createdAt)
+                            .dataList(dataList)
+                            .build();
+                })
+                .toList();
+
+        return ResultResponse.SuccessOrFailResponseDto.builder()
+                .totalCount(successPage.getTotalElements())
+                .data(groupedList)
+                .build();
+    }
+
+    public ResultResponse.SuccessOrFailResponseDto failDataByProcess(Long processId, int page, int size) {
+        List<AnalysisColumn> columnList = processRepository.findById(processId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 프로세스 ID")).getColumnList();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("resultId")
+        ));
+        Page<AnalysisFail> failPage = failRepository
+                .findByColumnIn(columnList, pageable);
+
+        Map<LogData, List<AnalysisFail>> groupedMap = failPage.getContent().stream()
+                .collect(Collectors.groupingBy(
+                        AnalysisFail::getLogData,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        List<ResultResponse.successOrFailDataDto> groupedList = groupedMap.entrySet().stream()
+                .sorted((e1, e2) -> {
+                    LocalDateTime t1 = e1.getValue().stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.MIN);
+                    LocalDateTime t2 = e2.getValue().stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(LocalDateTime.MIN);
+                    return t2.compareTo(t1); // 최신순
+                })
+                .map(entry -> {
+                    LogData log = entry.getKey();
+                    List<AnalysisFail> failList = entry.getValue();
+
+                    List<ResultResponse.successOrFailDataDto.resultDataDto> dataList = failList.stream()
+                            .filter(s -> columnList.contains(s.getColumn()))
+                            .map(s -> ResultResponse.successOrFailDataDto.resultDataDto.builder()
+                                    .column(s.getColumn().getName())
+                                    .value(s.getValueR())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    LocalDateTime createdAt = failList.stream()
+                            .map(BaseEntity::getCreatedAt)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(null);
+
+                    return ResultResponse.successOrFailDataDto.builder()
+                            .logId(log.getLogId())
+                            .createdAt(createdAt)
+                            .dataList(dataList)
+                            .build();
+                })
+                .toList();
+
+        return ResultResponse.SuccessOrFailResponseDto.builder()
+                .totalCount(failPage.getTotalElements())
+                .data(groupedList)
+                .build();
     }
 }
