@@ -20,7 +20,7 @@ public class SseController {
 
     @GetMapping(value = "/connect", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> connect() {
-        SseEmitter emitter = new SseEmitter(60 * 1000L);
+        SseEmitter emitter = new SseEmitter(5 * 60 * 1000L);
         sseEmitters.add(emitter);
         try {
             emitter.send(SseEmitter.event()
@@ -30,11 +30,5 @@ public class SseController {
             throw new RuntimeException(e);
         }
         return ResponseEntity.ok(emitter);
-    }
-
-    @PostMapping("/dailyActivity")
-    public ResponseEntity<Void> count() {
-        sseEmitters.getActivity();
-        return ResponseEntity.ok().build();
     }
 }

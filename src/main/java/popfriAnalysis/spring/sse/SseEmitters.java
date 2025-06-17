@@ -2,14 +2,11 @@ package popfriAnalysis.spring.sse;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import popfriAnalysis.spring.repository.FailRepository;
+import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
+import popfriAnalysis.spring.apiPayload.exception.handler.SseHandler;
 import popfriAnalysis.spring.repository.LogDataRepository;
-import popfriAnalysis.spring.repository.SuccessRepository;
-import popfriAnalysis.spring.service.ResultService;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 
 import java.io.IOException;
@@ -22,8 +19,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @RequiredArgsConstructor
 @Slf4j
 public class SseEmitters {
-    private final SuccessRepository successRepository;
-    private final FailRepository failRepository;
     private final LogDataRepository logDataRepository;
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
@@ -57,23 +52,13 @@ public class SseEmitters {
         double changeRate = 0.0;
         if (yesterdayCount != 0) {
             changeRate = ((double)(todayCount - yesterdayCount) / yesterdayCount) * 100.0;
-            log.info("cal rate: " + changeRate);
         } else if (todayCount != 0) {
             changeRate = 100.0; // 어제 0건인데 오늘 데이터가 있다면 100% 증가로 처리
-            log.info("yesterdayCount is 0:" + yesterdayCount);
-        }
-
-        Long successCnt = successRepository.countDistinctLogDataCreatedToday(startOfToday, startOfTomorrow);
-        Long failCnt = failRepository.countDistinctLogDataCreatedToday(startOfToday, startOfTomorrow);
-        double successRate = 0.0;
-        if((successCnt + failCnt) != 0){
-            successRate = ((double) successCnt / (successCnt + failCnt)) * 100;
         }
 
         return ResultResponse.getDailyActivityDto.builder()
                 .cnt(todayCount)
                 .changeRate(changeRate)
-                .successRate(successRate)
                 .build();
     }
 
@@ -86,7 +71,7 @@ public class SseEmitters {
                         .name("dailyActivity")
                         .data(dto));
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new SseHandler(ErrorStatus._NOT_EXIST_SORT);
             }
         });
     }

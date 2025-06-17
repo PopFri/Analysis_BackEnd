@@ -75,6 +75,5 @@ public class ResultResponse {
     public static class getDailyActivityDto{
         Long cnt;
         Double changeRate;
-        Double successRate;
     }
 }

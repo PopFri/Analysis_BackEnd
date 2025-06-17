@@ -8,11 +8,4 @@ import popfriAnalysis.spring.domain.AnalysisSuccess;
 import java.time.LocalDateTime;
 
 public interface SuccessRepository extends JpaRepository<AnalysisSuccess, Long> {
-    @Query(value = """
-        SELECT COUNT(DISTINCT log_id)
-        FROM analysis_success
-        WHERE createdAt >= :start AND createdAt < :end
-        """, nativeQuery = true)
-    Long countDistinctLogDataCreatedToday(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
-
 }
