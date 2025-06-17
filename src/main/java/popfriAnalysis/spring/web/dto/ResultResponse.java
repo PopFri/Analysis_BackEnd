@@ -44,6 +44,7 @@ public class ResultResponse {
         public static class conditionDto{
             String condition;
             Integer successCount;
+            Integer failedCount;
         }
     }
 
@@ -51,17 +52,26 @@ public class ResultResponse {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(title = "RESULT_RES_03 : 프로세스별 성공, 실패 데이터 응답")
-    public static class successAndFailDataDto{
-        List<resultDataDto> successList;
-        List<resultDataDto> failList;
+    @Schema(title = "RESULT_RES_03 : 프로세스별 성공 데이터 응답")
+    public static class SuccessOrFailResponseDto {
+        private Long totalCount;
+        private List<ResultResponse.successOrFailDataDto> data;
+    }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class successOrFailDataDto{
+        List<resultDataDto> dataList;
+        LocalDateTime createdAt;
+        Long logId;
 
         @Builder
         @Getter
         @NoArgsConstructor
         @AllArgsConstructor
         public static class resultDataDto{
-            LocalDateTime createdAt;
             String column;
             String value;
         }
