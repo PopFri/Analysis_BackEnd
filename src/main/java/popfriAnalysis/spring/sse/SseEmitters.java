@@ -64,4 +64,18 @@ public class SseEmitters {
             }
         });
     }
+
+    public void getProcessGraph(){
+        List<ResultResponse.getProcessGraphDto> result = sseService.getProcessGraph();
+
+        emitters.forEach(emitter -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("processGraph")
+                        .data(result));
+            } catch (IOException e) {
+                throw new SseHandler(ErrorStatus._SSE_ERROR);
+            }
+        });
+    }
 }

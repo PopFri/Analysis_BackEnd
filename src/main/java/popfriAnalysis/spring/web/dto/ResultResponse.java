@@ -91,9 +91,11 @@ public class ResultResponse {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(title = "RESULT_RES_05 : 1시간 활동 그래프 반환")
-    public static class getDataCntGraphDto{
-        Long cnt;
-        LocalDateTime time;
+    @Schema(title = "RESULT_RES_05 : 프로세스 결과 그래프 반환")
+    public static class getProcessGraphDto{
+        Long processId;
+        String processName;
+        Integer successCnt;
+        Integer failCnt;
     }
 }
