@@ -86,4 +86,14 @@ public class ResultResponse {
         Long cnt;
         Double changeRate;
     }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "RESULT_RES_05 : 1시간 활동 그래프 반환")
+    public static class getDataCntGraphDto{
+        Long cnt;
+        LocalDateTime time;
+    }
 }

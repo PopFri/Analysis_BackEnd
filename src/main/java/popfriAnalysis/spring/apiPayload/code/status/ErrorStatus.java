@@ -29,6 +29,9 @@ public enum ErrorStatus implements BaseErrorCode {
 
     //Result Error
     _NOT_EXIST_SORT(HttpStatus.BAD_REQUEST,"RESULT4001","존재하지 않은 정렬방식입니다."),
+
+    //Result Error
+    _SSE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"SSE5001","SSE 통신 중 오류가 발생했습니다."),
     ;
 
     private final HttpStatus httpStatus;

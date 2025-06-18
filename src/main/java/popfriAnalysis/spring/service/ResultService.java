@@ -16,17 +16,11 @@ import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
 import popfriAnalysis.spring.apiPayload.exception.handler.ResultHandler;
 import popfriAnalysis.spring.domain.*;
 import popfriAnalysis.spring.domain.common.BaseEntity;
-import popfriAnalysis.spring.repository.CalculatorRepository;
-import popfriAnalysis.spring.repository.FailRepository;
-import popfriAnalysis.spring.repository.ProcessRepository;
-import popfriAnalysis.spring.repository.SuccessRepository;
+import popfriAnalysis.spring.repository.*;
 import popfriAnalysis.spring.sse.SseEmitters;
 import popfriAnalysis.spring.web.dto.ResultResponse;
-import popfriAnalysis.spring.repository.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -80,6 +74,7 @@ public class ResultService {
         });
 
         sseEmitters.getActivity();
+        sseEmitters.getDataCntGraph();
     }
 
     @Transactional

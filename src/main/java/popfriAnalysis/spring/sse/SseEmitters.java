@@ -6,22 +6,20 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
 import popfriAnalysis.spring.apiPayload.exception.handler.SseHandler;
-import popfriAnalysis.spring.repository.LogDataRepository;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class SseEmitters {
-    private final LogDataRepository logDataRepository;
-
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+    private final SseService sseService;
 
     SseEmitter add(SseEmitter emitter) {
         this.emitters.add(emitter);
@@ -39,31 +37,8 @@ public class SseEmitters {
         return emitter;
     }
 
-    public ResultResponse.getDailyActivityDto getDailyActivity(){
-        LocalDate today = LocalDate.now();
-
-        LocalDateTime startOfToday = today.atStartOfDay();
-        LocalDateTime startOfTomorrow = today.plusDays(1).atStartOfDay();
-        LocalDateTime startOfYesterday = today.minusDays(1).atStartOfDay();
-
-        Long todayCount = logDataRepository.countByCreatedAtBetween(startOfToday, startOfTomorrow);
-        Long yesterdayCount = logDataRepository.countByCreatedAtBetween(startOfYesterday, startOfToday);
-
-        double changeRate = 0.0;
-        if (yesterdayCount != 0) {
-            changeRate = ((double)(todayCount - yesterdayCount) / yesterdayCount) * 100.0;
-        } else if (todayCount != 0) {
-            changeRate = 100.0; // 어제 0건인데 오늘 데이터가 있다면 100% 증가로 처리
-        }
-
-        return ResultResponse.getDailyActivityDto.builder()
-                .cnt(todayCount)
-                .changeRate(changeRate)
-                .build();
-    }
-
     public void getActivity(){
-        ResultResponse.getDailyActivityDto dto = getDailyActivity();
+        ResultResponse.getDailyActivityDto dto = sseService.getDailyActivity();
 
         emitters.forEach(emitter -> {
             try {
@@ -71,7 +46,21 @@ public class SseEmitters {
                         .name("dailyActivity")
                         .data(dto));
             } catch (IOException e) {
-                throw new SseHandler(ErrorStatus._NOT_EXIST_SORT);
+                throw new SseHandler(ErrorStatus._SSE_ERROR);
+            }
+        });
+    }
+
+    public void getDataCntGraph(){
+        Map<LocalDateTime, Long> result = sseService.getDataCntGraph();
+
+        emitters.forEach(emitter -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("dataCntGraph")
+                        .data(result));
+            } catch (IOException e) {
+                throw new SseHandler(ErrorStatus._SSE_ERROR);
             }
         });
     }
