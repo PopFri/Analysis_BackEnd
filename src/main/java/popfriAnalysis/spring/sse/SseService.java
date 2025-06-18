@@ -7,6 +7,10 @@ import popfriAnalysis.spring.web.dto.ResultResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -34,5 +38,31 @@ public class SseService {
                 .cnt(todayCount)
                 .changeRate(changeRate)
                 .build();
+    }
+    public record TimeRange(LocalDateTime start, LocalDateTime end) {}
+    public Map<LocalDateTime, Long> getDataCntGraph(){
+        LocalDateTime now = LocalDateTime.now();
+
+        // 현재 시각을 5분 단위로 내림
+        int minute = now.getMinute();
+        int roundedMinute = (minute / 5) * 5;
+        LocalDateTime end = now.withMinute(roundedMinute).withSecond(0).withNano(0);
+
+        // 시작 시각은 1시간 전의 5분 단위로 맞춤
+        LocalDateTime start = end.minusHours(1);
+
+        List<TimeRange> intervals = new ArrayList<>();
+        for (LocalDateTime t = start; t.isBefore(end); t = t.plusMinutes(5)) {
+            intervals.add(new TimeRange(t, t.plusMinutes(5)));
+        }
+        intervals.add(new TimeRange(end, end.plusMinutes(5)));
+
+        Map<LocalDateTime, Long> result = new LinkedHashMap<>();
+        for (TimeRange range : intervals) {
+            long count = logDataRepository.countByCreatedAtBetween(range.start(), range.end());
+            result.put(range.start, count);
+        }
+
+        return result;
     }
 }

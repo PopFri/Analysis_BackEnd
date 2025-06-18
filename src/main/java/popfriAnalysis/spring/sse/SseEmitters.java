@@ -6,13 +6,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
 import popfriAnalysis.spring.apiPayload.exception.handler.SseHandler;
-import popfriAnalysis.spring.repository.LogDataRepository;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
@@ -46,6 +45,20 @@ public class SseEmitters {
                 emitter.send(SseEmitter.event()
                         .name("dailyActivity")
                         .data(dto));
+            } catch (IOException e) {
+                throw new SseHandler(ErrorStatus._SSE_ERROR);
+            }
+        });
+    }
+
+    public void getDataCntGraph(){
+        Map<LocalDateTime, Long> result = sseService.getDataCntGraph();
+
+        emitters.forEach(emitter -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("dataCntGraph")
+                        .data(result));
             } catch (IOException e) {
                 throw new SseHandler(ErrorStatus._SSE_ERROR);
             }
