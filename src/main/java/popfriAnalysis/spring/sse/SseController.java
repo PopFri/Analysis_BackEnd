@@ -12,6 +12,7 @@ import popfriAnalysis.spring.web.dto.ResultResponse;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -54,7 +55,7 @@ public class SseController {
     }
 
     @GetMapping(value = "/data-cnt-graph", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<SseEmitter> count() {
+    public ResponseEntity<SseEmitter> getDataCntGraph() {
         SseEmitter emitter = new SseEmitter(5 * 60 * 1000L);
         sseEmitters.add(emitter);
 
@@ -63,6 +64,23 @@ public class SseController {
         try {
             emitter.send(SseEmitter.event()
                     .name("dataCntGraph")
+                    .data(dto));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return ResponseEntity.ok(emitter);
+    }
+
+    @GetMapping(value = "/process-graph", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> getProcessGraph() {
+        SseEmitter emitter = new SseEmitter(5 * 60 * 1000L);
+        sseEmitters.add(emitter);
+
+        List<ResultResponse.getProcessGraphDto> dto = sseService.getProcessGraph();
+
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("processGraph")
                     .data(dto));
         } catch (IOException e) {
             throw new RuntimeException(e);

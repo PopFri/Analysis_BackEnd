@@ -3,6 +3,7 @@ package popfriAnalysis.spring.sse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.repository.LogDataRepository;
+import popfriAnalysis.spring.repository.ProcessRepository;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SseService {
     private final LogDataRepository logDataRepository;
+    private final ProcessRepository processRepository;
 
     public ResultResponse.getDailyActivityDto getDailyActivity(){
         LocalDate today = LocalDate.now();
@@ -64,5 +66,19 @@ public class SseService {
         }
 
         return result;
+    }
+
+    public List<ResultResponse.getProcessGraphDto> getProcessGraph(){
+        return processRepository.findAll().stream().map(process -> {
+            Integer successCnt = process.getColumnList().get(0).getSuccessList().size();
+            Integer failCnt = process.getColumnList().get(0).getFailList().size();
+
+            return ResultResponse.getProcessGraphDto.builder()
+                    .processId(process.getProcessId())
+                    .processName(process.getName())
+                    .successCnt(successCnt)
+                    .failCnt(failCnt)
+                    .build();
+        }).toList();
     }
 }

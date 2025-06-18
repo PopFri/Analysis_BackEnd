@@ -75,6 +75,7 @@ public class ResultService {
 
         sseEmitters.getActivity();
         sseEmitters.getDataCntGraph();
+        sseEmitters.getProcessGraph();
     }
 
     @Transactional
