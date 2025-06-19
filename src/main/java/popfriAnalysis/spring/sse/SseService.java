@@ -2,6 +2,7 @@ package popfriAnalysis.spring.sse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import popfriAnalysis.spring.repository.LogDataRepository;
 import popfriAnalysis.spring.repository.ProcessRepository;
 import popfriAnalysis.spring.web.dto.ResultResponse;
@@ -68,6 +69,7 @@ public class SseService {
         return result;
     }
 
+    @Transactional
     public List<ResultResponse.getProcessGraphDto> getProcessGraph(){
         return processRepository.findAll().stream().map(process -> {
             Integer successCnt = process.getColumnList().get(0).getSuccessList().size();
