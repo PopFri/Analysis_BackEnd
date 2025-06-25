@@ -35,7 +35,7 @@ public class ResultService {
     private final LogDataRepository logDataRepository;
     private final SseEmitters sseEmitters;
 
-    @KafkaListener(topics = "matomo-log", groupId = "analysis_server_consumer_01")
+    @KafkaListener(topics = "popfri-log", groupId = "analysis_server_consumer_02")
     @Transactional
     public void saveResult(String message) throws ParseException {
         JSONParser jsonParser = new JSONParser();
