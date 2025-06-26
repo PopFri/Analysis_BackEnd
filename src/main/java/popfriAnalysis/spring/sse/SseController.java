@@ -56,7 +56,7 @@ public class SseController {
 
     @GetMapping(value = "/data-cnt-graph", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> getDataCntGraph() {
-        SseEmitter emitter = new SseEmitter(5 * 60 * 1000L);
+        SseEmitter emitter = new SseEmitter(20 * 60 * 1000L);
         sseEmitters.add(emitter);
 
         Map<LocalDateTime, Long> dto = sseService.getDataCntGraph();
@@ -73,7 +73,7 @@ public class SseController {
 
     @GetMapping(value = "/process-graph", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> getProcessGraph() {
-        SseEmitter emitter = new SseEmitter(5 * 60 * 1000L);
+        SseEmitter emitter = new SseEmitter(20 * 60 * 1000L);
         sseEmitters.add(emitter);
 
         List<ResultResponse.getProcessGraphDto> dto = sseService.getProcessGraph();
