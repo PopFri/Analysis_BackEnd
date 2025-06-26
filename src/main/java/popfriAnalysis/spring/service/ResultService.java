@@ -43,35 +43,37 @@ public class ResultService {
 
         LogData logData = logDataRepository.save(LogData.builder().data(message).build());
 
-        processRepository.findAll().forEach(process -> {
-            if(evaluateProcessLogic(jsonObject, process)){
-                process.getColumnList().forEach(column -> {
-                    Object jsonValue = jsonObject.get(column.getName());
-                    if(jsonValue == null){
-                        jsonValue = "null";
-                    }
+        processRepository.findAll().stream()
+                .filter(process -> !process.getCalculatorList().isEmpty())
+                .forEach(process -> {
+                    if (evaluateProcessLogic(jsonObject, process)) {
+                        process.getColumnList().forEach(column -> {
+                            Object jsonValue = jsonObject.get(column.getName());
+                            if (jsonValue == null) {
+                                jsonValue = "null";
+                            }
 
-                    successRepository.save(AnalysisSuccess.builder()
-                            .column(column)
-                            .valueR(jsonValue.toString())
-                            .logData(logData).build());
-                });
-                log.info("Save Result Successful(success_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
-            } else {
-                process.getColumnList().forEach(column -> {
-                    Object jsonValue = jsonObject.get(column.getName());;
-                    if(jsonValue == null){
-                        jsonValue = "null";
-                    }
+                            successRepository.save(AnalysisSuccess.builder()
+                                    .column(column)
+                                    .valueR(jsonValue.toString())
+                                    .logData(logData).build());
+                        });
+                        log.info("Save Result Successful(success_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
+                    } else {
+                        process.getColumnList().forEach(column -> {
+                            Object jsonValue = jsonObject.get(column.getName());
+                            if (jsonValue == null) {
+                                jsonValue = "null";
+                            }
 
-                    failRepository.save(AnalysisFail.builder()
-                            .column(column)
-                            .valueR(jsonValue.toString())
-                            .logData(logData).build());
+                            failRepository.save(AnalysisFail.builder()
+                                    .column(column)
+                                    .valueR(jsonValue.toString())
+                                    .logData(logData).build());
+                        });
+                        log.info("Save Result Successful(fail_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
+                    }
                 });
-                log.info("Save Result Successful(fail_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
-            }
-        });
 
         sseEmitters.getActivity();
         sseEmitters.getDataCntGraph();
@@ -82,7 +84,7 @@ public class ResultService {
     public boolean evaluateProcessLogic(JSONObject jsonObject, AnalysisProcess process) {
         List<Calculator> entries = calculatorRepository.findByProcessOrderByCalIndex(process);
 
-        if(entries.isEmpty()){
+        if (entries.isEmpty()) {
             log.info("Condition is empty: processId: " + process.getProcessId());
             return true;
         }
@@ -94,9 +96,9 @@ public class ResultService {
                 AnalysisCondition condition = entry.getCondition();
                 // 피연산자: 조건 평가
                 boolean result = calculateColumn(jsonObject, entry.getCondition());
-                if(result) {
+                if (result) {
                     condition.setSuccessCount(condition.getSuccessCount() + 1);
-                }else {
+                } else {
                     condition.setFailCount(condition.getFailCount() + 1);
                 }
                 stack.push(result);
@@ -149,7 +151,7 @@ public class ResultService {
                 case "<=" -> result = Double.parseDouble(actualValue) <= Double.parseDouble(value);
                 default -> throw new ResultHandler(ErrorStatus._NOT_EXIST_OPERATION);
             }
-        } catch (NumberFormatException err){
+        } catch (NumberFormatException err) {
             result = false;
             log.error("Can Solve the Operator (column name: " + actualValue + ")");
         }
@@ -157,13 +159,13 @@ public class ResultService {
         return result;
     }
 
-    public List<ResultResponse.getResultColumn> getResultList(AnalysisProcess process){
+    public List<ResultResponse.getResultColumn> getResultList(AnalysisProcess process) {
         Map<Long, List<AnalysisSuccess>> successMap = process.getColumnList().stream()
                 .flatMap(column -> column.getSuccessList().stream())
                 .collect(Collectors.groupingBy(analysisSuccess -> analysisSuccess.getLogData().getLogId()));
 
         List<ResultResponse.getResultColumn> resultList = new ArrayList<>();
-        for(Long logId : successMap.keySet()){
+        for (Long logId : successMap.keySet()) {
             resultList.add(ResultResponse.getResultColumn.builder()
                     .logId(logId)
                     .columnList(successMap.get(logId)
@@ -210,8 +212,8 @@ public class ResultService {
                 .build();
     }
 
-    public List<ResultResponse.getResultColumn> sortResultList(List<ResultResponse.getResultColumn> dtoList, String columnName, String order){
-        if(!(order.equals("asc") || order.equals("ASC") ||order.equals("desc") || order.equals("DESC"))){
+    public List<ResultResponse.getResultColumn> sortResultList(List<ResultResponse.getResultColumn> dtoList, String columnName, String order) {
+        if (!(order.equals("asc") || order.equals("ASC") || order.equals("desc") || order.equals("DESC"))) {
             throw new ResultHandler(ErrorStatus._NOT_EXIST_SORT);
         }
 
@@ -223,7 +225,7 @@ public class ResultService {
             return sortColumnDto.map(ResultResponse.getResultColumn.columnDto::getValue).orElse(null);
         }));
 
-        if(order.equals("desc") || order.equals("DESC")){
+        if (order.equals("desc") || order.equals("DESC")) {
             Collections.reverse(dtoList);
         }
 

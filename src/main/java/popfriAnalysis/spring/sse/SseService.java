@@ -20,7 +20,7 @@ public class SseService {
     private final LogDataRepository logDataRepository;
     private final ProcessRepository processRepository;
 
-    public ResultResponse.getDailyActivityDto getDailyActivity(){
+    public ResultResponse.getDailyActivityDto getDailyActivity() {
         LocalDate today = LocalDate.now();
 
         LocalDateTime startOfToday = today.atStartOfDay();
@@ -32,7 +32,7 @@ public class SseService {
 
         double changeRate = 0.0;
         if (yesterdayCount != 0) {
-            changeRate = ((double)(todayCount - yesterdayCount) / yesterdayCount) * 100.0;
+            changeRate = ((double) (todayCount - yesterdayCount) / yesterdayCount) * 100.0;
         } else if (todayCount != 0) {
             changeRate = 100.0; // 어제 0건인데 오늘 데이터가 있다면 100% 증가로 처리
         }
@@ -42,8 +42,8 @@ public class SseService {
                 .changeRate(changeRate)
                 .build();
     }
-    public record TimeRange(LocalDateTime start, LocalDateTime end) {}
-    public Map<LocalDateTime, Long> getDataCntGraph(){
+
+    public Map<LocalDateTime, Long> getDataCntGraph() {
         LocalDateTime now = LocalDateTime.now();
 
         // 현재 시각을 5분 단위로 내림
@@ -70,17 +70,22 @@ public class SseService {
     }
 
     @Transactional
-    public List<ResultResponse.getProcessGraphDto> getProcessGraph(){
-        return processRepository.findAll().stream().map(process -> {
-            Integer successCnt = process.getColumnList().get(0).getSuccessList().size();
-            Integer failCnt = process.getColumnList().get(0).getFailList().size();
+    public List<ResultResponse.getProcessGraphDto> getProcessGraph() {
+        return processRepository.findAll().stream()
+                .filter(process -> !process.getCalculatorList().isEmpty())
+                .map(process -> {
+                    Integer successCnt = process.getColumnList().get(0).getSuccessList().size();
+                    Integer failCnt = process.getColumnList().get(0).getFailList().size();
 
-            return ResultResponse.getProcessGraphDto.builder()
-                    .processId(process.getProcessId())
-                    .processName(process.getName())
-                    .successCnt(successCnt)
-                    .failCnt(failCnt)
-                    .build();
-        }).toList();
+                    return ResultResponse.getProcessGraphDto.builder()
+                            .processId(process.getProcessId())
+                            .processName(process.getName())
+                            .successCnt(successCnt)
+                            .failCnt(failCnt)
+                            .build();
+                }).toList();
+    }
+
+    public record TimeRange(LocalDateTime start, LocalDateTime end) {
     }
 }
