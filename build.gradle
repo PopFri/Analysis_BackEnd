@@ -41,6 +41,10 @@ dependencies {
 
 	//JSON parser
 	implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+
+	// Actuator + Prometheus
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
 }
 
 tasks.named('test') {
