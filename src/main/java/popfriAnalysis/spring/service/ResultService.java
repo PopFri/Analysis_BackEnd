@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
@@ -34,46 +36,60 @@ public class ResultService {
     private final FailRepository failRepository;
     private final LogDataRepository logDataRepository;
     private final SseEmitters sseEmitters;
+    private final MeterRegistry meterRegistry;
 
     @KafkaListener(topics = "matomo-log", groupId = "analysis_server_consumer_01")
     @Transactional
-    public void saveResult(String message) throws ParseException {
+    public void saveResult(List<String> messages) {
         JSONParser jsonParser = new JSONParser();
-        JSONObject jsonObject = (JSONObject) jsonParser.parse(message);
-
-        LogData logData = logDataRepository.save(LogData.builder().data(message).build());
-
-        processRepository.findAll().stream()
+        List<AnalysisProcess> processes = processRepository.findAll().stream()
                 .filter(process -> !process.getCalculatorList().isEmpty())
-                .forEach(process -> {
-                    if (evaluateProcessLogic(jsonObject, process)) {
-                        process.getColumnList().forEach(column -> {
-                            Object jsonValue = jsonObject.get(column.getName());
-                            if (jsonValue == null) {
-                                jsonValue = "null";
-                            }
+                .toList();
 
-                            successRepository.save(AnalysisSuccess.builder()
-                                    .column(column)
-                                    .valueR(jsonValue.toString())
-                                    .logData(logData).build());
-                        });
-                        log.info("Save Result Successful(success_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
-                    } else {
-                        process.getColumnList().forEach(column -> {
-                            Object jsonValue = jsonObject.get(column.getName());
-                            if (jsonValue == null) {
-                                jsonValue = "null";
-                            }
+        List<AnalysisSuccess> successBatch = new ArrayList<>();
+        List<AnalysisFail> failBatch = new ArrayList<>();
 
-                            failRepository.save(AnalysisFail.builder()
-                                    .column(column)
-                                    .valueR(jsonValue.toString())
-                                    .logData(logData).build());
-                        });
-                        log.info("Save Result Successful(fail_result) logId: " + logData.getLogId() + ", processId: " + process.getProcessId());
-                    }
-                });
+        Counter.builder("kafka.messages.processed")
+                .description("실제 처리된 Kafka 메시지 건수")
+                .register(meterRegistry)
+                .increment(messages.size());
+
+        for (String message : messages) {
+            JSONObject jsonObject;
+            try {
+                jsonObject = (JSONObject) jsonParser.parse(message);
+            } catch (ParseException e) {
+                log.error("Failed to parse Kafka message: {}", message, e);
+                continue;
+            }
+
+            LogData logData = logDataRepository.save(LogData.builder().data(message).build());
+
+            for (AnalysisProcess process : processes) {
+                if (evaluateProcessLogic(jsonObject, process)) {
+                    process.getColumnList().forEach(column -> {
+                        Object jsonValue = jsonObject.get(column.getName());
+                        successBatch.add(AnalysisSuccess.builder()
+                                .column(column)
+                                .valueR(jsonValue != null ? jsonValue.toString() : "null")
+                                .logData(logData).build());
+                    });
+                    log.info("Save Result Successful(success_result) logId: {}, processId: {}", logData.getLogId(), process.getProcessId());
+                } else {
+                    process.getColumnList().forEach(column -> {
+                        Object jsonValue = jsonObject.get(column.getName());
+                        failBatch.add(AnalysisFail.builder()
+                                .column(column)
+                                .valueR(jsonValue != null ? jsonValue.toString() : "null")
+                                .logData(logData).build());
+                    });
+                    log.info("Save Result Successful(fail_result) logId: {}, processId: {}", logData.getLogId(), process.getProcessId());
+                }
+            }
+        }
+
+        if (!successBatch.isEmpty()) successRepository.saveAll(successBatch);
+        if (!failBatch.isEmpty()) failRepository.saveAll(failBatch);
 
         sseEmitters.getActivity();
         sseEmitters.getDataCntGraph();
