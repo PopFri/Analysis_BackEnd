@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
@@ -22,6 +23,7 @@ import popfriAnalysis.spring.repository.*;
 import popfriAnalysis.spring.sse.SseEmitters;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,6 +39,7 @@ public class ResultService {
     private final LogDataRepository logDataRepository;
     private final SseEmitters sseEmitters;
     private final MeterRegistry meterRegistry;
+    private final JdbcTemplate jdbcTemplate;
 
     @KafkaListener(topics = "matomo-log", groupId = "analysis_server_consumer_01")
     @Transactional
@@ -88,12 +91,36 @@ public class ResultService {
             }
         }
 
-        if (!successBatch.isEmpty()) successRepository.saveAll(successBatch);
-        if (!failBatch.isEmpty()) failRepository.saveAll(failBatch);
+        if (!successBatch.isEmpty()) bulkInsertSuccess(successBatch);
+        if (!failBatch.isEmpty()) bulkInsertFail(failBatch);
 
         sseEmitters.getActivity();
         sseEmitters.getDataCntGraph();
         sseEmitters.getProcessGraph();
+    }
+
+    private void bulkInsertSuccess(List<AnalysisSuccess> list) {
+        String sql = "INSERT INTO analysis_success (column_id, value_r, log_id, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)";
+        LocalDateTime now = LocalDateTime.now();
+        jdbcTemplate.batchUpdate(sql, list, list.size(), (ps, success) -> {
+            ps.setLong(1, success.getColumn().getColumnId());
+            ps.setString(2, success.getValueR());
+            ps.setLong(3, success.getLogData().getLogId());
+            ps.setTimestamp(4, Timestamp.valueOf(now));
+            ps.setTimestamp(5, Timestamp.valueOf(now));
+        });
+    }
+
+    private void bulkInsertFail(List<AnalysisFail> list) {
+        String sql = "INSERT INTO analysis_fail (column_id, value_r, log_id, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)";
+        LocalDateTime now = LocalDateTime.now();
+        jdbcTemplate.batchUpdate(sql, list, list.size(), (ps, fail) -> {
+            ps.setLong(1, fail.getColumn().getColumnId());
+            ps.setString(2, fail.getValueR());
+            ps.setLong(3, fail.getLogData().getLogId());
+            ps.setTimestamp(4, Timestamp.valueOf(now));
+            ps.setTimestamp(5, Timestamp.valueOf(now));
+        });
     }
 
     @Transactional
