@@ -3,6 +3,7 @@ package popfriAnalysis.spring.config;
 import lombok.AllArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.json.simple.parser.ParseException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -10,6 +11,10 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +25,7 @@ import java.util.Map;
 public class KafkaConsumerConfig {
 
     private final Environment env;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Bean
     public Map<String, Object> consumerConfig() {
@@ -50,6 +56,14 @@ public class KafkaConsumerConfig {
         factory.setConcurrency(3);
         // batch listen 활성화
         factory.setBatchListener(true);
+
+        // 일시적 오류: 1초 간격 2번 재시도 후 DLT 전송
+        // 파싱 실패(ParseException): 재시도 없이 바로 DLT 전송
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate);
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 2L));
+        errorHandler.addNotRetryableExceptions(ParseException.class);
+        factory.setCommonErrorHandler(errorHandler);
+
         return factory;
     }
 }

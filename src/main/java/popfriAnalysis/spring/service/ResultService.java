@@ -10,17 +10,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.listener.BatchListenerFailedException;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
 import popfriAnalysis.spring.apiPayload.exception.handler.ResultHandler;
 import popfriAnalysis.spring.domain.*;
 import popfriAnalysis.spring.domain.common.BaseEntity;
 import popfriAnalysis.spring.repository.*;
-import popfriAnalysis.spring.sse.SseEmitters;
 import popfriAnalysis.spring.web.dto.ResultResponse;
 
 import java.sql.Timestamp;
@@ -37,11 +34,8 @@ public class ResultService {
     private final SuccessRepository successRepository;
     private final FailRepository failRepository;
     private final LogDataRepository logDataRepository;
-    private final SseEmitters sseEmitters;
-    private final MeterRegistry meterRegistry;
     private final JdbcTemplate jdbcTemplate;
 
-    @KafkaListener(topics = "matomo-log", groupId = "analysis_server_consumer_01")
     @Transactional
     public void saveResult(List<String> messages) {
         JSONParser jsonParser = new JSONParser();
@@ -52,18 +46,14 @@ public class ResultService {
         List<AnalysisSuccess> successBatch = new ArrayList<>();
         List<AnalysisFail> failBatch = new ArrayList<>();
 
-        Counter.builder("kafka.messages.processed")
-                .description("실제 처리된 Kafka 메시지 건수")
-                .register(meterRegistry)
-                .increment(messages.size());
-
-        for (String message : messages) {
+        for (int i = 0; i < messages.size(); i++) {
+            String message = messages.get(i);
             JSONObject jsonObject;
             try {
                 jsonObject = (JSONObject) jsonParser.parse(message);
             } catch (ParseException e) {
                 log.error("Failed to parse Kafka message: {}", message, e);
-                continue;
+                throw new BatchListenerFailedException("JSON 파싱 실패", e, i);
             }
 
             LogData logData = logDataRepository.save(LogData.builder().data(message).build());
@@ -93,10 +83,6 @@ public class ResultService {
 
         if (!successBatch.isEmpty()) bulkInsertSuccess(successBatch);
         if (!failBatch.isEmpty()) bulkInsertFail(failBatch);
-
-        sseEmitters.getActivity();
-        sseEmitters.getDataCntGraph();
-        sseEmitters.getProcessGraph();
     }
 
     private void bulkInsertSuccess(List<AnalysisSuccess> list) {
