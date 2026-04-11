@@ -9,8 +9,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
@@ -45,6 +47,14 @@ public class KafkaConsumerConfig {
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
         return new DefaultKafkaConsumerFactory<>(this.consumerConfig());
+    }
+
+    @Bean
+    public KafkaAdmin.NewTopics topics() {
+        return new KafkaAdmin.NewTopics(
+                TopicBuilder.name("matomo-log").partitions(3).replicas(1).build(),
+                TopicBuilder.name("matomo-log-dlt").partitions(3).replicas(1).build()
+        );
     }
 
     @Bean

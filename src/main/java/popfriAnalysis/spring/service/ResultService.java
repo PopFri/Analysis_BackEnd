@@ -1,17 +1,14 @@
 package popfriAnalysis.spring.service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.kafka.listener.BatchListenerFailedException;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.apiPayload.code.status.ErrorStatus;
 import popfriAnalysis.spring.apiPayload.exception.handler.ResultHandler;
@@ -37,47 +34,46 @@ public class ResultService {
     private final JdbcTemplate jdbcTemplate;
 
     @Transactional
-    public void saveResult(List<String> messages) {
-        JSONParser jsonParser = new JSONParser();
-        List<AnalysisProcess> processes = processRepository.findAll().stream()
-                .filter(process -> !process.getCalculatorList().isEmpty())
-                .toList();
+    public List<AnalysisProcess> getProcesses() {
+        processRepository.findAllWithCalculatorList();
+        return processRepository.findAllWithColumnList();
+    }
+
+    public Map<Long, List<Calculator>> getCalculatorMap(List<AnalysisProcess> processes) {
+        return processes.stream().collect(Collectors.toMap(
+                AnalysisProcess::getProcessId,
+                calculatorRepository::findByProcessWithConditionAndColumn
+        ));
+    }
+
+    @Transactional
+    public void saveOneMessage(JSONObject jsonObject, String rawMessage,
+                               List<AnalysisProcess> processes, Map<Long, List<Calculator>> calculatorMap) {
+
+        LogData logData = logDataRepository.saveAndFlush(LogData.builder().data(rawMessage).build());
 
         List<AnalysisSuccess> successBatch = new ArrayList<>();
         List<AnalysisFail> failBatch = new ArrayList<>();
 
-        for (int i = 0; i < messages.size(); i++) {
-            String message = messages.get(i);
-            JSONObject jsonObject;
-            try {
-                jsonObject = (JSONObject) jsonParser.parse(message);
-            } catch (ParseException e) {
-                log.error("Failed to parse Kafka message: {}", message, e);
-                throw new BatchListenerFailedException("JSON 파싱 실패", e, i);
-            }
-
-            LogData logData = logDataRepository.save(LogData.builder().data(message).build());
-
-            for (AnalysisProcess process : processes) {
-                if (evaluateProcessLogic(jsonObject, process)) {
-                    process.getColumnList().forEach(column -> {
-                        Object jsonValue = jsonObject.get(column.getName());
-                        successBatch.add(AnalysisSuccess.builder()
-                                .column(column)
-                                .valueR(jsonValue != null ? jsonValue.toString() : "null")
-                                .logData(logData).build());
-                    });
-                    log.info("Save Result Successful(success_result) logId: {}, processId: {}", logData.getLogId(), process.getProcessId());
-                } else {
-                    process.getColumnList().forEach(column -> {
-                        Object jsonValue = jsonObject.get(column.getName());
-                        failBatch.add(AnalysisFail.builder()
-                                .column(column)
-                                .valueR(jsonValue != null ? jsonValue.toString() : "null")
-                                .logData(logData).build());
-                    });
-                    log.info("Save Result Successful(fail_result) logId: {}, processId: {}", logData.getLogId(), process.getProcessId());
-                }
+        for (AnalysisProcess process : processes) {
+            if (evaluateProcessLogic(jsonObject, process, calculatorMap)) {
+                process.getColumnList().forEach(column -> {
+                    Object jsonValue = jsonObject.get(column.getName());
+                    successBatch.add(AnalysisSuccess.builder()
+                            .column(column)
+                            .valueR(jsonValue != null ? jsonValue.toString() : "null")
+                            .logData(logData).build());
+                });
+                log.info("Save Result Successful(success_result) logId: {}, processId: {}", logData.getLogId(), process.getProcessId());
+            } else {
+                process.getColumnList().forEach(column -> {
+                    Object jsonValue = jsonObject.get(column.getName());
+                    failBatch.add(AnalysisFail.builder()
+                            .column(column)
+                            .valueR(jsonValue != null ? jsonValue.toString() : "null")
+                            .logData(logData).build());
+                });
+                log.info("Save Result Successful(fail_result) logId: {}, processId: {}", logData.getLogId(), process.getProcessId());
             }
         }
 
@@ -110,10 +106,10 @@ public class ResultService {
     }
 
     @Transactional
-    public boolean evaluateProcessLogic(JSONObject jsonObject, AnalysisProcess process) {
-        List<Calculator> entries = calculatorRepository.findByProcessOrderByCalIndex(process);
+    public boolean evaluateProcessLogic(JSONObject jsonObject, AnalysisProcess process, Map<Long, List<Calculator>> calculatorMap) {
+        List<Calculator> entries = calculatorMap.get(process.getProcessId());
 
-        if (entries.isEmpty()) {
+        if (entries == null || entries.isEmpty()) {
             log.info("Condition is empty: processId: " + process.getProcessId());
             return true;
         }

@@ -24,6 +24,7 @@ spring:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     #open-in-view: false
   kafka:
+    bootstrap-servers: localhost:9093
     consumer:
       bootstrap-servers: localhost:9093 # Kafka 클러스터에 대한 초기 연결에 사용할 호스트 : 포트 목록
       group-id: analysis_server_consumer_01 # Group Id
@@ -38,7 +39,7 @@ management:
     web:
       exposure:
         include: prometheus,health,metrics
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
