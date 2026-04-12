@@ -10,4 +10,6 @@ import java.util.List;
 
 public interface FailRepository extends JpaRepository<AnalysisFail, Long> {
     Page<AnalysisFail> findByColumnIn(List<AnalysisColumn> columns, Pageable pageable);
+
+    long countByColumn(AnalysisColumn column);
 }

@@ -105,7 +105,6 @@ public class ResultService {
         });
     }
 
-    @Transactional
     public boolean evaluateProcessLogic(JSONObject jsonObject, AnalysisProcess process, Map<Long, List<Calculator>> calculatorMap) {
         List<Calculator> entries = calculatorMap.get(process.getProcessId());
 
@@ -118,14 +117,7 @@ public class ResultService {
 
         for (Calculator entry : entries) {
             if (entry.getCondition() != null) {
-                AnalysisCondition condition = entry.getCondition();
-                // 피연산자: 조건 평가
                 boolean result = calculateColumn(jsonObject, entry.getCondition());
-                if (result) {
-                    condition.setSuccessCount(condition.getSuccessCount() + 1);
-                } else {
-                    condition.setFailCount(condition.getFailCount() + 1);
-                }
                 stack.push(result);
             } else if (entry.getRelation() != null) {
                 switch (entry.getRelation()) {
@@ -151,7 +143,6 @@ public class ResultService {
         return stack.pop();
     }
 
-    @Transactional
     public Boolean calculateColumn(JSONObject jsonObject, AnalysisCondition condition) {
         String operator = condition.getOperator();
         String value = condition.getValueC();
@@ -209,8 +200,8 @@ public class ResultService {
     public ResultResponse.successDataCountDto successDataCountByCondition(Long processId) {
         List<Calculator> calculatorList = processRepository.findById(processId).orElseThrow().getCalculatorList();
         List<ResultResponse.successDataCountDto.conditionDto> successDataCountDtoList = new ArrayList<>();
-        Integer totalCount = 0;
-        Integer conditionCount = 0;
+        long totalCount = 0;
+        int conditionCount = 0;
         for (Calculator calculator : calculatorList) {
             AnalysisCondition condition = calculator.getCondition();
             if (condition == null || condition.getColumn() == null) continue;
@@ -219,20 +210,20 @@ public class ResultService {
             String value = condition.getValueC();
             String strCondition = columnName + " " + operator + " " + value;
 
-            Integer successCount = condition.getSuccessCount() != null ? condition.getSuccessCount() : 0;
-            Integer failCount = condition.getFailCount() != null ? condition.getFailCount() : 0;
+            long successCount = successRepository.countByColumn(condition.getColumn());
+            long failCount = failRepository.countByColumn(condition.getColumn());
 
             successDataCountDtoList.add(ResultResponse.successDataCountDto.conditionDto.builder()
                     .condition(strCondition)
-                    .successCount(successCount)
-                    .failedCount(failCount)
+                    .successCount((int) successCount)
+                    .failedCount((int) failCount)
                     .build());
 
             totalCount += successCount + failCount;
             conditionCount++;
         }
         return ResultResponse.successDataCountDto.builder()
-                .totalCount(totalCount / conditionCount)
+                .totalCount((int) (conditionCount > 0 ? totalCount / conditionCount : 0))
                 .conditionList(successDataCountDtoList)
                 .build();
     }

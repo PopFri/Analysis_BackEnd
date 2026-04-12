@@ -11,4 +11,6 @@ import java.util.List;
 public interface SuccessRepository extends JpaRepository<AnalysisSuccess, Long> {
 
     Page<AnalysisSuccess> findByColumnIn(List<AnalysisColumn> columns, Pageable pageable);
+
+    long countByColumn(AnalysisColumn column);
 }
