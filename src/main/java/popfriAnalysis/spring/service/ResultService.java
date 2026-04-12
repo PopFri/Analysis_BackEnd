@@ -47,7 +47,7 @@ public class ResultService {
     }
 
     @Transactional
-    public void saveOneMessage(JSONObject jsonObject, String rawMessage,
+    public LogData saveOneMessage(JSONObject jsonObject, String rawMessage,
                                List<AnalysisProcess> processes, Map<Long, List<Calculator>> calculatorMap) {
 
         LogData logData = logDataRepository.saveAndFlush(LogData.builder().data(rawMessage).build());
@@ -79,6 +79,8 @@ public class ResultService {
 
         if (!successBatch.isEmpty()) bulkInsertSuccess(successBatch);
         if (!failBatch.isEmpty()) bulkInsertFail(failBatch);
+
+        return logData;
     }
 
     private void bulkInsertSuccess(List<AnalysisSuccess> list) {

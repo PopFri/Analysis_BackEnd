@@ -12,8 +12,10 @@ import org.springframework.kafka.listener.BatchListenerFailedException;
 import org.springframework.stereotype.Service;
 import popfriAnalysis.spring.domain.AnalysisProcess;
 import popfriAnalysis.spring.domain.Calculator;
+import popfriAnalysis.spring.domain.LogData;
 import popfriAnalysis.spring.sse.SseEmitters;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +25,7 @@ import java.util.Map;
 public class KafkaResultFacade {
 
     private final ResultService resultService;
+    private final RecommendationCollectorService recommendationCollectorService;
     private final SseEmitters sseEmitters;
     private final MeterRegistry meterRegistry;
 
@@ -37,6 +40,9 @@ public class KafkaResultFacade {
         Map<Long, List<Calculator>> calculatorMap = resultService.getCalculatorMap(processes);
 
         JSONParser jsonParser = new JSONParser();
+        List<JSONObject> parsedJsonList = new ArrayList<>(messages.size());
+        List<LogData> logDataList = new ArrayList<>(messages.size());
+
         for (int i = 0; i < messages.size(); i++) {
             String message = messages.get(i);
             JSONObject jsonObject;
@@ -47,12 +53,16 @@ public class KafkaResultFacade {
                 throw new BatchListenerFailedException("JSON 파싱 실패", e, i);
             }
             try {
-                resultService.saveOneMessage(jsonObject, message, processes, calculatorMap);
+                LogData logData = resultService.saveOneMessage(jsonObject, message, processes, calculatorMap);
+                parsedJsonList.add(jsonObject);
+                logDataList.add(logData);
             } catch (Exception e) {
                 log.error("saveOneMessage failed at index {}: {}", i, message, e);
                 throw new BatchListenerFailedException("saveOneMessage 실패", e, i);
             }
         }
+
+        recommendationCollectorService.collectBatch(parsedJsonList, logDataList);
 
         sseEmitters.getActivity();
         sseEmitters.getDataCntGraph();
