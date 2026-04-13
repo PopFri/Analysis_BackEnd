@@ -106,6 +106,7 @@ public class ResultResponse {
     @Schema(title = "RESULT_RES_06 : 영화 분석 통계 항목")
     public static class MovieStatDto {
         String movieName;
+        Long movieId;
         Long count;
     }
 

@@ -24,16 +24,16 @@ public class UserMovieEventLog extends BaseEntity {
     @Column(name = "event_log_id")
     private Long eventLogId;
 
-    @Column(name = "uid", length = 500)
+    @Column(name = "uid", length = 50)
     private String uid;                // QUERY_uid : 사용자 고유 ID
 
-    @Column(name = "event_category", length = 500)
+    @Column(name = "event_category", length = 100)
     private String eventCategory;      // QUERY_e_c : 영화 장르
 
-    @Column(name = "event_action", length = 500)
+    @Column(name = "event_action", length = 50)
     private String eventAction;        // QUERY_e_a : 예: time_spent
 
-    @Column(name = "event_name", length = 500)
+    @Column(name = "event_name", length = 100)
     private String eventName;          // QUERY_e_n : 영화 제목 (이벤트 대상)
 
     @Column(name = "event_value")
@@ -47,6 +47,9 @@ public class UserMovieEventLog extends BaseEntity {
 
     @Column(name = "user_gender", length = 500)
     private String userGender;         // QUERY_dimension3 : 사용자 성별
+
+    @Column(name = "movie_id")
+    private Long movieId;              // QUERY_dimension4 : TMDB 영화 ID
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "log_id")

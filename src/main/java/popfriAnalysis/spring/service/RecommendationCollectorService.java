@@ -31,7 +31,8 @@ public class RecommendationCollectorService {
             "QUERY_e_v",
             "QUERY_dimension1",
             "QUERY_dimension2",
-            "QUERY_dimension3"
+            "QUERY_dimension3",
+            "QUERY_dimension4"
     );
 
     private final JdbcTemplate jdbcTemplate;
@@ -59,6 +60,7 @@ public class RecommendationCollectorService {
                     .movieTitle(getString(json, "QUERY_dimension1"))
                     .userBirth(getString(json, "QUERY_dimension2"))
                     .userGender(getString(json, "QUERY_dimension3"))
+                    .movieId(getLong(json, "QUERY_dimension4"))
                     .logData(logDataList.get(i))
                     .build());
         }
@@ -99,8 +101,8 @@ public class RecommendationCollectorService {
         String sql = """
                 INSERT INTO user_movie_event_log
                     (uid, event_category, event_action, event_name, event_value,
-                     movie_title, user_birth, user_gender, log_id, createdAt, updatedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     movie_title, user_birth, user_gender, movie_id, log_id, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         LocalDateTime now = LocalDateTime.now();
         jdbcTemplate.batchUpdate(sql, list, list.size(), (ps, item) -> {
@@ -112,9 +114,10 @@ public class RecommendationCollectorService {
             ps.setString(6, item.getMovieTitle());
             ps.setString(7, item.getUserBirth());
             ps.setString(8, item.getUserGender());
-            ps.setLong(9, item.getLogData().getLogId());
-            ps.setTimestamp(10, Timestamp.valueOf(now));
+            ps.setObject(9, item.getMovieId());
+            ps.setLong(10, item.getLogData().getLogId());
             ps.setTimestamp(11, Timestamp.valueOf(now));
+            ps.setTimestamp(12, Timestamp.valueOf(now));
         });
     }
 }

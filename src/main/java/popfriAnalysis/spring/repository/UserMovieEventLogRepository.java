@@ -15,10 +15,10 @@ public interface UserMovieEventLogRepository extends JpaRepository<UserMovieEven
 
     /** 전체 – 기간 내 영화별 방문 횟수 */
     @Query("""
-        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, COUNT(u))
+        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, u.movieId, COUNT(u))
         FROM UserMovieEventLog u
         WHERE u.createdAt BETWEEN :start AND :end
-        GROUP BY u.movieTitle
+        GROUP BY u.movieTitle, u.movieId
         ORDER BY COUNT(u) DESC
         """)
     List<ResultResponse.MovieStatDto> findVisitStatDefault(
@@ -27,11 +27,11 @@ public interface UserMovieEventLogRepository extends JpaRepository<UserMovieEven
 
     /** 성별 필터 – 기간 내 영화별 방문 횟수 */
     @Query("""
-        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, COUNT(u))
+        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, u.movieId, COUNT(u))
         FROM UserMovieEventLog u
         WHERE u.createdAt BETWEEN :start AND :end
           AND u.userGender = :gender
-        GROUP BY u.movieTitle
+        GROUP BY u.movieTitle, u.movieId
         ORDER BY COUNT(u) DESC
         """)
     List<ResultResponse.MovieStatDto> findVisitStatByGender(
@@ -41,11 +41,11 @@ public interface UserMovieEventLogRepository extends JpaRepository<UserMovieEven
 
     /** 연령대 필터 – 기간 내 영화별 방문 횟수 (생일 4자리 연도 기준) */
     @Query("""
-        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, COUNT(u))
+        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, u.movieId, COUNT(u))
         FROM UserMovieEventLog u
         WHERE u.createdAt BETWEEN :start AND :end
           AND (YEAR(CURRENT_DATE) - CAST(SUBSTRING(u.userBirth, 1, 4) AS int)) BETWEEN :ageMin AND :ageMax
-        GROUP BY u.movieTitle
+        GROUP BY u.movieTitle, u.movieId
         ORDER BY COUNT(u) DESC
         """)
     List<ResultResponse.MovieStatDto> findVisitStatByAge(
@@ -58,11 +58,11 @@ public interface UserMovieEventLogRepository extends JpaRepository<UserMovieEven
 
     /** 전체 – 기간 내 영화별 체류시간(초) 합산 */
     @Query("""
-        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, SUM(u.eventValue))
+        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, u.movieId, SUM(u.eventValue))
         FROM UserMovieEventLog u
         WHERE u.createdAt BETWEEN :start AND :end
           AND u.eventAction = 'time_spent'
-        GROUP BY u.movieTitle
+        GROUP BY u.movieTitle, u.movieId
         ORDER BY SUM(u.eventValue) DESC
         """)
     List<ResultResponse.MovieStatDto> findDwellTimeStatDefault(
@@ -71,12 +71,12 @@ public interface UserMovieEventLogRepository extends JpaRepository<UserMovieEven
 
     /** 성별 필터 – 기간 내 영화별 체류시간(초) 합산 */
     @Query("""
-        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, SUM(u.eventValue))
+        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, u.movieId, SUM(u.eventValue))
         FROM UserMovieEventLog u
         WHERE u.createdAt BETWEEN :start AND :end
           AND u.eventAction = 'time_spent'
           AND u.userGender = :gender
-        GROUP BY u.movieTitle
+        GROUP BY u.movieTitle, u.movieId
         ORDER BY SUM(u.eventValue) DESC
         """)
     List<ResultResponse.MovieStatDto> findDwellTimeStatByGender(
@@ -86,12 +86,12 @@ public interface UserMovieEventLogRepository extends JpaRepository<UserMovieEven
 
     /** 연령대 필터 – 기간 내 영화별 체류시간(초) 합산 */
     @Query("""
-        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, SUM(u.eventValue))
+        SELECT new popfriAnalysis.spring.web.dto.ResultResponse$MovieStatDto(u.movieTitle, u.movieId, SUM(u.eventValue))
         FROM UserMovieEventLog u
         WHERE u.createdAt BETWEEN :start AND :end
           AND u.eventAction = 'time_spent'
           AND (YEAR(CURRENT_DATE) - CAST(SUBSTRING(u.userBirth, 1, 4) AS int)) BETWEEN :ageMin AND :ageMax
-        GROUP BY u.movieTitle
+        GROUP BY u.movieTitle, u.movieId
         ORDER BY SUM(u.eventValue) DESC
         """)
     List<ResultResponse.MovieStatDto> findDwellTimeStatByAge(
