@@ -14,7 +14,9 @@ import popfriAnalysis.spring.domain.common.BaseEntity;
 @DynamicInsert
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name = "user_movie_event_log")
+@Table(name = "user_movie_event_log", indexes = {
+        @Index(name = "idx_uid_action", columnList = "uid, event_action")
+})
 public class UserMovieEventLog extends BaseEntity {
 
     @Id
@@ -34,8 +36,8 @@ public class UserMovieEventLog extends BaseEntity {
     @Column(name = "event_name", length = 500)
     private String eventName;          // QUERY_e_n : 영화 제목 (이벤트 대상)
 
-    @Column(name = "event_value", length = 500)
-    private String eventValue;         // QUERY_e_v : 체류 시간(초)
+    @Column(name = "event_value")
+    private Long eventValue;           // QUERY_e_v : 체류 시간(초)
 
     @Column(name = "movie_title", length = 500)
     private String movieTitle;         // QUERY_dimension1 : 방문한 영화 제목

@@ -55,7 +55,7 @@ public class RecommendationCollectorService {
                     .eventCategory(getString(json, "QUERY_e_c"))
                     .eventAction(getString(json, "QUERY_e_a"))
                     .eventName(getString(json, "QUERY_e_n"))
-                    .eventValue(getString(json, "QUERY_e_v"))
+                    .eventValue(getLong(json, "QUERY_e_v"))
                     .movieTitle(getString(json, "QUERY_dimension1"))
                     .userBirth(getString(json, "QUERY_dimension2"))
                     .userGender(getString(json, "QUERY_dimension3"))
@@ -84,6 +84,17 @@ public class RecommendationCollectorService {
         return value != null ? value.toString() : null;
     }
 
+    private Long getLong(JSONObject json, String key) {
+        Object value = json.get(key);
+        if (value == null) return null;
+        try {
+            return Long.parseLong(value.toString());
+        } catch (NumberFormatException e) {
+            log.warn("eventValue parse failed (key={}): {}", key, value);
+            return null;
+        }
+    }
+
     private void bulkInsert(List<UserMovieEventLog> list) {
         String sql = """
                 INSERT INTO user_movie_event_log
@@ -97,7 +108,7 @@ public class RecommendationCollectorService {
             ps.setString(2, item.getEventCategory());
             ps.setString(3, item.getEventAction());
             ps.setString(4, item.getEventName());
-            ps.setString(5, item.getEventValue());
+            ps.setObject(5, item.getEventValue());
             ps.setString(6, item.getMovieTitle());
             ps.setString(7, item.getUserBirth());
             ps.setString(8, item.getUserGender());

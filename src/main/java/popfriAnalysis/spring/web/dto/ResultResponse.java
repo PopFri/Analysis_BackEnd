@@ -98,4 +98,24 @@ public class ResultResponse {
         Integer successCnt;
         Integer failCnt;
     }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "RESULT_RES_06 : 영화 분석 통계 항목")
+    public static class MovieStatDto {
+        String movieName;
+        Long count;
+    }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "RESULT_RES_07 : 사용자 장르별 체류시간 Top 3")
+    public static class UserGenreStatDto {
+        String genre;
+        Long totalDwellTime;
+    }
 }
