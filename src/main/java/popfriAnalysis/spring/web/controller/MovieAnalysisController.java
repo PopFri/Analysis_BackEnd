@@ -43,6 +43,12 @@ public class MovieAnalysisController {
         return ApiResponse.onSuccess(movieAnalysisService.getDwellTimeStat(date, type));
     }
 
+    @GetMapping("/users")
+    @Operation(summary = "UID 목록 조회", description = "user_movie_event_log에 존재하는 전체 uid 목록 반환")
+    public ApiResponse<List<String>> getAllUids() {
+        return ApiResponse.onSuccess(movieAnalysisService.getAllUids());
+    }
+
     @GetMapping("/user-genre")
     @Operation(
         summary = "사용자 선호 장르 Top 3",

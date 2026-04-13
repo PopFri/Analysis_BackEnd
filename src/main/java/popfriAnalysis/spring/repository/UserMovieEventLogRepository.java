@@ -100,6 +100,12 @@ public interface UserMovieEventLogRepository extends JpaRepository<UserMovieEven
             @Param("ageMin") int ageMin,
             @Param("ageMax") int ageMax);
 
+    // ── uid 목록 ─────────────────────────────────────────────────────────
+
+    /** 전체 uid 목록 (중복 제거) */
+    @Query("SELECT DISTINCT u.uid FROM UserMovieEventLog u ORDER BY u.uid")
+    List<String> findAllUids();
+
     // ── 사용자별 장르 체류시간 Top 3 ─────────────────────────────────────
 
     /** uid 기준 장르별 체류시간(초) 합산 상위 3개 */

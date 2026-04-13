@@ -49,6 +49,12 @@ public class MovieAnalysisService {
         };
     }
 
+    // ── uid 목록 ─────────────────────────────────────────────────────────
+
+    public List<String> getAllUids() {
+        return eventLogRepository.findAllUids();
+    }
+
     // ── 사용자별 선호 장르 (체류시간 Top 3) ─────────────────────────────────
 
     public List<ResultResponse.UserGenreStatDto> getTopGenresByUid(String uid) {
